@@ -12,3 +12,5 @@ egui_extras = {version="0.22.0", features = ["image"]}
 image = { version = "0.24", default-features = false, features = ["png", "jpeg", "gif", "webp-encoder", "tiff"] }
 screenshots = "0.7.1"
 native-dialog = "0.6.4"
+arboard = "3.2.0"
+rdev = "0.5.3"

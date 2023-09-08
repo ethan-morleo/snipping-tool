@@ -30,11 +30,13 @@
 
     }
     pub(crate) mod app_utils{
-        use std::cmp::max;
+        use std::borrow::Cow;
+        use std::cmp::{max, min};
         use std::ops::Deref;
+        use arboard::{Clipboard, ImageData};
         use eframe;
         use egui;
-        use egui::{Color32, ColorImage, Pos2, Rect, Rounding, Stroke, Ui, UserAttentionType, Vec2};
+        use egui::{Color32, ColorImage, emath, Pos2, Rect, Rounding, Stroke, Ui, UserAttentionType, Vec2};
         use egui_extras::RetainedImage;
         use screenshots::{DisplayInfo, Image, Screen};
         use crate::mods::screen_utils;
@@ -42,6 +44,8 @@
         use image::{DynamicImage, GenericImageView, ImageBuffer, RgbaImage};
         use image::imageops::FilterType;
         use native_dialog::FileDialog;
+        use rdev::{Event, EventType};
+        use rdev::Key::ControlLeft;
 
         ///enum for all screenshot type
         #[derive(Debug, PartialEq, Copy, Clone)]
@@ -79,6 +83,29 @@
                 }
             }
         }
+        //enum for all hotkeys functions
+        #[derive(Debug, PartialEq, Copy, Clone)]
+        pub(crate) enum HotkeysFunctions{
+            NewFull,
+            NewCustom,
+            QuarterTopRight,
+            QuarterTopLeft,
+            QuarterDownRight,
+            QuarterDownLeft
+        }
+        impl HotkeysFunctions{
+            pub fn equal(self, state:&str) -> bool {
+                match state{
+                    "NewFull" =>{self ==HotkeysFunctions::NewFull},
+                    "NewCustom" =>{self ==HotkeysFunctions::NewCustom},
+                    "QuarterTopRight" =>{self == HotkeysFunctions::QuarterTopRight},
+                    "QuarterTopLeft" =>{self == HotkeysFunctions::QuarterTopLeft},
+                    "QuarterDownLeft" =>{self == HotkeysFunctions::QuarterDownLeft},
+                    "QuarterDownRight" =>{self == HotkeysFunctions::QuarterDownRight}
+                    _ => {panic!("INVALID Hotkeys functions IN INPUT")}
+                }
+            }
+        }
         struct ImageToShow{
             full_ret_image: Option<RetainedImage>,
             custom_ret_image: Option<RetainedImage>
@@ -97,6 +124,7 @@
             image_raw: Option<DynamicImage>,
             image_show:bool,
             erased:bool,
+            hotkeys_functions: Option<HotkeysFunctions>,
             screen_type: ScreenshotType,
             is_multi_display: bool,
             screen_number: usize,
@@ -116,6 +144,7 @@
                     image_raw:None,
                     image_show:false,
                     erased:false,
+                    hotkeys_functions: None,
                     screen_type:ScreenshotType::FULL,
                     is_multi_display:false,
                     screen_number:0,
@@ -143,7 +172,7 @@
                 self.icons.get(index).unwrap()
             }
             pub fn get_rect_position(&self) -> [Pos2;2]{ self.rect_positions }
-
+            pub fn get_hotkey_function(&self) ->Option<HotkeysFunctions>{self.hotkeys_functions}
             pub fn is_multi_display(&self) -> bool{
                 self.is_multi_display
             }
@@ -166,6 +195,7 @@
                 else {self.rect_positions[1] = pos2}
             }
             pub fn set_outside_rect(&mut self, is_outside_rect: bool){ self.outside_rect = is_outside_rect;}
+            pub fn set_hotkey_function(&mut self, function: Option<HotkeysFunctions>){self.hotkeys_functions = function}
             //--------------------------------------------------------------------------------------
             //PUBLIC METHOD
             ///take full display screenshot
@@ -219,7 +249,7 @@
                     frame.set_window_size(Vec2::new(original_size.x*0.65, original_size.y*0.65));
                     frame.request_user_attention(UserAttentionType::Informational);
                 }
-                //se rect e ancora non ho scelto l'area massimizzo il frame
+                //se tipo screenshot rect e ancora non ho scelto l'area massimizzo il frame
                 else if self.screen_type==ScreenshotType::RECT && !self.is_rect_choosen(){
                     self.image_show=true;
                    frame.set_maximized(true);
@@ -228,16 +258,16 @@
                 else if self.screen_type==ScreenshotType::RECT && self.is_rect_choosen(){
                     self.image_show=true;
                     let (width,height) = (self.image_raw.as_mut().unwrap().width(),self.image_raw.as_mut().unwrap().height());
-                    if width<300 || height<300{
-                        if width<300 && height<300{
-                            frame.set_window_size(Vec2::new(300.0,300.0));
-                        }else if width<300 && height>300{
-                            frame.set_window_size(Vec2::new(300.0, height as f32))
-                        }else{
-                            frame.set_window_size(Vec2::new(width as f32, 300.0))
+                    if width<600 || height<600{
+                        if width<600 && height<600{
+                            frame.set_window_size(Vec2::new(600.0,600.0));
+                        }else if width<600 && height>600{
+                            frame.set_window_size(Vec2::new(600.0, height as f32))
+                        }else if width>600 && height<600{
+                            frame.set_window_size(Vec2::new(width as f32, 600.0))
                         }
                     }else{
-                        frame.set_window_size(Vec2::new(width as f32*1.1, height as f32*1.1));
+                        frame.set_window_size(Vec2::new(width as f32*1.1, height as f32*1.3));
                     }
                     frame.set_centered();
                 }
@@ -266,19 +296,23 @@
                     }
                 }
             }
+
+            ///method to know if rect is shown
             pub fn is_rect_shown(&self)->bool{
                 //se vedo il rettangolo rosso i due elementi sono diversi tra loro e non sono entrambi uguali a 0
                 self.rect_positions[0]!=Pos2::new(0.0,0.0) && self.rect_positions[1]!= Pos2::new(0.0,0.0)
             }
 
+            /// method that crop full image to custom selected one
             pub fn replace_image_with_rect(&mut self){
                 self.normalize_coords(screen_utils::get_screen(0).display_info);
+                let x_starting_point = min(self.rect_positions[0].x as i32, self.rect_positions[1].x as i32);
+                let y_starting_point = min(self.rect_positions[0].y as i32, self.rect_positions[1].y as i32);
                 self.image_raw =Some(self.image_raw.as_mut().unwrap().crop_imm(
-                    (self.rect_positions[0].x) as u32,
-                    (self.rect_positions[0].y) as u32,
-                    //TODO: modificare in base alla direzione
-                    (self.rect_positions[1].x - self.rect_positions[0].x) as u32,
-                    (self.rect_positions[1].y - self.rect_positions[0].y) as u32
+                    (x_starting_point) as u32,
+                    (y_starting_point) as u32,
+                    ((self.rect_positions[1].x - self.rect_positions[0].x).abs()) as u32,
+                    ((self.rect_positions[1].y - self.rect_positions[0].y).abs()) as u32
                 ));
                 self.image.custom_ret_image=retained_image_from_dynamic(self.image_raw.as_ref().unwrap());
             }
@@ -289,6 +323,7 @@
                     self.erased=true;
             }
 
+            ///method to transform mouse coords inside frame in actual full image coords
             pub fn normalize_coords(&mut self, disp_info:DisplayInfo){
                 let x_aspect_ratio: f32= (disp_info.width as f32/((disp_info.width as f32*0.92)+12.0));
                 let y_aspect_ratio:f32 = disp_info.height as f32 /((disp_info.height as f32 * 0.92)+12.0);
@@ -301,6 +336,20 @@
                 //normalizing final coords
                 self.rect_positions[1].x=self.rect_positions[1].x*x_aspect_ratio;
                 self.rect_positions[1].y=self.rect_positions[1].y*y_aspect_ratio;
+            }
+            pub fn do_hotkey_function(&mut self, function: HotkeysFunctions, frame: &mut eframe::Frame){
+                match function {
+                    HotkeysFunctions::NewFull => {
+                        if self.request_state == RequestState::INITIALIZED{
+                            self.screen_request_init(frame);
+                        }
+                    }
+                    HotkeysFunctions::NewCustom => {}
+                    HotkeysFunctions::QuarterTopRight => {}
+                    HotkeysFunctions::QuarterTopLeft => {}
+                    HotkeysFunctions::QuarterDownRight => {}
+                    HotkeysFunctions::QuarterDownLeft => {}
+                }
             }
 
             //--------------------------------------------------------------------------------------
@@ -341,6 +390,7 @@
                         }
                     });
             }
+
             ///draw erase button
             pub fn draw_erase_button(&mut self, frame:&mut eframe::Frame, ui: &mut Ui, ctx: &egui::Context){
                 ui.add_space(20.0);
@@ -353,10 +403,11 @@
                     self.go_back();
                 }
             }
+
             ///draw save file picker
             pub fn draw_file_picker(&mut self, frame:&mut eframe::Frame, ui: &mut Ui, ctx: &egui::Context){
-                ui.add_space(100.0);
-                //new button
+                ui.add_space(40.0);
+
                 if ui.add(egui::Button::image_and_text(
                     self.get_icon(5).texture_id(ctx),
                     Vec2::new(30.0, 30.0),
@@ -375,6 +426,23 @@
                     }
                 }
             }
+
+            ///draw copy button
+            pub fn draw_copy_button(&mut self, frame:&mut eframe::Frame, ui: &mut Ui, ctx: &egui::Context, clipboard: &mut Clipboard){
+                if ui.add(egui::ImageButton::new(
+                    self.get_icon(6).texture_id(ctx),
+                    Vec2::new(30.0, 30.0)
+                )).clicked(){
+                    //copy image in clipboard
+                    Clipboard::set_image(clipboard, ImageData{
+                        width: self.image_raw.as_mut().unwrap().width() as usize,
+                        height: self.image_raw.as_mut().unwrap().height() as usize,
+                        bytes: Cow::from(self.image_raw.as_mut().unwrap().as_bytes())
+                    }
+                    ).expect("impossible to copy image into clipboard");
+                };
+            }
+
             ///draw image on ui differently based on use case
             pub fn draw_image(&mut self, frame: &mut eframe::Frame, ui:&mut Ui){
                 if !self.erased{
@@ -388,6 +456,7 @@
                     }
                 }
             }
+
             ///draw ok button to confirm custom rect screen
             pub fn draw_ok_button(&mut self, frame:&mut eframe::Frame, ui: &mut Ui, ctx: &egui::Context){
                 ui.add_space(30.0);
@@ -402,6 +471,7 @@
                     }
                 }
             }
+
             ///draw back button that control the go back frontend flow
             pub fn draw_back_button(&mut self, frame:&mut eframe::Frame, ui: &mut Ui, ctx: &egui::Context){
                 ui.add_space(20.0);
@@ -422,15 +492,27 @@
                     }
                 );
             }
+
+            ///draw red selected screenshot rect
             pub fn draw_red_rect(&self, ui: &mut Ui){
+                let points = vec![self.rect_positions[0], self.rect_positions[1]];
                 ui.painter().rect(
-                    Rect::from_two_pos(self.get_rect_position()[0], self.get_rect_position()[1]),
+                    emath::Rect::from_points(&*points),
                     Rounding::none(),
                     Color32::from_rgba_unmultiplied(220, 220, 220, 9 as u8),
                     Stroke::new(1.5,Color32::RED)
                 );
+                /*ui.painter().rect(
+                    Rect::from_two_pos(self.get_rect_position()[0], self.get_rect_position()[1]),
+                    Rounding::none(),
+                    Color32::from_rgba_unmultiplied(220, 220, 220, 9 as u8),
+                    Stroke::new(1.5,Color32::RED)
+                );*/
             }
+
             //--------------------------------------------------------------------------------------
+            //INPUT HANDLER
+            ///method to control mouse
             pub fn control_mouse_input(&mut self, ctx: & egui::Context){
                 ctx.input(
                     |i|{
@@ -453,6 +535,20 @@
                     }
                 );
             }
+
+            ///method to control keyboard
+            pub fn control_keyboard(&mut self, ctx: & egui::Context, frame: &mut eframe::Frame ){
+                ctx.input(
+                    |i|{
+                        if i.key_down(egui::Key::Space){
+                            if self.request_state==RequestState::INITIALIZED{
+                                self.hotkeys_functions = Some(HotkeysFunctions::NewFull);
+                            }
+                        }
+                    }
+                )
+            }
+
             //--------------------------------------------------------------------------------------
             fn reinit_app(&mut self){
                 self.request_state=RequestState::INITIALIZED;
@@ -501,9 +597,15 @@
                     include_bytes!("../icons/back.png")
                 ).unwrap(),
                 RetainedImage::from_image_bytes(
-                    "back_icon",
+                    "folder",
                     include_bytes!("../icons/folder.png")
+                ).unwrap(),
+                RetainedImage::from_image_bytes(
+                    "copy",
+                    include_bytes!("../icons/copy.png")
                 ).unwrap()
+
+
             ]
         }
     }
