@@ -41,6 +41,7 @@
         use image;
         use image::{DynamicImage, GenericImageView, ImageBuffer, RgbaImage};
         use image::imageops::FilterType;
+        use native_dialog::FileDialog;
 
         ///enum for all screenshot type
         #[derive(Debug, PartialEq, Copy, Clone)]
@@ -352,6 +353,28 @@
                     self.go_back();
                 }
             }
+            ///draw save file picker
+            pub fn draw_file_picker(&mut self, frame:&mut eframe::Frame, ui: &mut Ui, ctx: &egui::Context){
+                ui.add_space(100.0);
+                //new button
+                if ui.add(egui::Button::image_and_text(
+                    self.get_icon(5).texture_id(ctx),
+                    Vec2::new(30.0, 30.0),
+                    "Save as..."
+                )).clicked(){
+                    let mut path = FileDialog::new()
+                        .add_filter("PNG Image", &["png"])
+                        .add_filter("JPEG image",&["jpg", "jpeg"] )
+                        .add_filter("Gif image", &["gif"])
+                        .add_filter("WebP image", &["webp"])
+                        .add_filter("Tiff image", &["tiff"])
+                        .show_save_single_file().unwrap();
+                    //save image
+                    if let Some(path) = path {
+                        self.image_raw.as_mut().unwrap().save(path.as_path()).expect("Error in saving image");
+                    }
+                }
+            }
             ///draw image on ui differently based on use case
             pub fn draw_image(&mut self, frame: &mut eframe::Frame, ui:&mut Ui){
                 if !self.erased{
@@ -476,6 +499,10 @@
                 RetainedImage::from_image_bytes(
                     "back_icon",
                     include_bytes!("../icons/back.png")
+                ).unwrap(),
+                RetainedImage::from_image_bytes(
+                    "back_icon",
+                    include_bytes!("../icons/folder.png")
                 ).unwrap()
             ]
         }

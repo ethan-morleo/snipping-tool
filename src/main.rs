@@ -67,6 +67,7 @@ impl eframe::App for mods::app_utils::MyApp {
                     |ui|{
                         self.draw_new_button(frame,ui,ctx);
                         self.draw_erase_button(frame,ui,ctx);
+                        self.draw_file_picker(frame,ui,ctx);
                     });
                 self.draw_image(frame,ui);
             }
