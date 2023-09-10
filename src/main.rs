@@ -1,17 +1,15 @@
 
 use eframe::egui;
-use egui::{Align, Color32, ColorImage, CursorIcon, Key, Layout, PointerButton, Pos2, Rect, Rounding, Stroke, TextureId, Ui, UserAttentionType, Vec2, Visuals, Widget};
-use egui::accesskit::Role::Image;
-use egui::Key::K;
-use egui::WidgetType::Button;
-use egui_extras::RetainedImage;
-use image::{ImageBuffer, RgbaImage};
-use rdev::{Event, EventType, listen};
-use rdev::Key::ControlLeft;
-use screenshots::{Compression, Screen};
-use crate::mods::app_utils::ScreenshotType;
+use egui::{Align, CursorIcon, Layout};
+use crate::draw::draw_utils::{draw_add_hotkey_combobox, draw_back_button, draw_back_menu_button, draw_combobox, draw_copy_button, draw_delete_button, draw_enable_hotkeys_shortcuts, draw_erase_button, draw_file_picker, draw_image, draw_more_menu, draw_new_button, draw_ok_button, draw_ok_shortcut_button, draw_red_rect, draw_select_hotkey, draw_shortcut_selection};
+use crate::enums::app_enums::ScreenshotType;
+use crate::input::input::{control_keyboard, control_mouse_input};
 
-mod mods;
+mod app;
+mod draw;
+mod enums;
+mod input;
+mod utils;
 
 fn main() -> Result<(), eframe::Error> {
     let options = eframe::NativeOptions {
@@ -21,54 +19,59 @@ fn main() -> Result<(), eframe::Error> {
     eframe::run_native(
         "RUST POLITO SNIPPING TOOL",
         options,
-        Box::new(|_cc| Box::<mods::app_utils::MyApp>::default()),
+        Box::new(|_cc| Box::<app::app_utils::MyApp>::default()),
     )
 }
 
 
-impl eframe::App for mods::app_utils::MyApp {
+impl eframe::App for app::app_utils::MyApp {
     fn update(&mut self, ctx: &egui::Context, frame: &mut eframe::Frame) {
-        self.control_keyboard(ctx, frame);
+        let clipboard = &mut arboard::Clipboard::new().unwrap();
         frame.set_decorations(true);
         ctx.set_pixels_per_point(1.0);
-        let mut clipboard = &mut arboard::Clipboard::new().unwrap();
+
         //------------------------------------------------------------------------------------------
         //state change from incomplete, no ui needed
         if self.get_request_state().equal("INCOMPLETE"){
            self.process_incomplete_request();
         }
         egui::CentralPanel::default().show(ctx, |ui| {
-           if let Some(function) = self.get_hotkey_function(){
-               self.set_hotkey_function(None);
-               self.do_hotkey_function(function, frame);
-           }
+            control_keyboard(self,ctx, frame, clipboard);
+
 
             //--------------------------------------------------------------------------------------
             //UI FOR THE APP IN INITIALIZED
             if self.get_request_state().equal("INITIALIZED"){
                 ui.horizontal(|ui|{
-                    self.draw_new_button(frame,ui, ctx); //new button: state change in incomplete and started screenshot flow
-                    self.draw_combobox(ui); //choose mode (FULL OR RECT)
+                    draw_new_button(self, frame, ui, ctx);
+                    draw_combobox(self,ui);
+                    ui.with_layout(
+                        Layout::right_to_left(Align::Center),
+                        |ui|{
+                            draw_more_menu(self,ui,ctx);
+                        }
+                    )
                 });
+                ui.separator();
             }
             //--------------------------------------------------------------------------------------
             //UI FOR CHOOSING SCREENSHOT CUSTOM AREA
             if self.get_request_state().equal("CHOICE_RECT"){
                 ui.horizontal(
                     |ui|{
-                        self.draw_image(frame,ui);
-                        self.control_mouse_input(ctx);
+                        draw_image(self, frame,ui);
+                        control_mouse_input(self, ctx);
                         ui.add_space(15.0);
                         ui.vertical(
                           |ui|{
-                              self.draw_ok_button(frame,ui,ctx);
-                              self.draw_back_button(frame,ui,ctx);
+                              draw_ok_button(self,ui,ctx);
+                              draw_back_button(self,ui,ctx);
                           }
                         );
                         if !self.is_outside_rect(){
                             ctx.set_cursor_icon(CursorIcon::Crosshair);
                         }
-                        self.draw_red_rect(ui);
+                        draw_red_rect(self, ui);
                     }
                 );
             }
@@ -77,28 +80,61 @@ impl eframe::App for mods::app_utils::MyApp {
             if self.get_request_state().equal("PROCESSED"){
                 ui.horizontal(
                     |ui|{
-                        self.draw_new_button(frame,ui,ctx);
-                        self.draw_erase_button(frame,ui,ctx);
+                        draw_new_button(self,frame,ui,ctx);
+                        draw_erase_button(self,ui,ctx);
                         ui.with_layout(
                             Layout::right_to_left(Align::Center),
                             |ui|{
-                                self.draw_file_picker(frame,ui,ctx);
-                                self.draw_copy_button(frame,ui,ctx,clipboard);
+                                draw_more_menu(self,ui,ctx);
+                                draw_file_picker(self,ui,ctx);
+                                draw_copy_button(self,ui,ctx,clipboard);
                             }
                         );
+                        ui.separator();
                     });
 
-                if self.get_screen_type()==ScreenshotType::RECT{ui.add_space(20.0);}
+                if self.get_screen_type()==ScreenshotType::RECT {ui.add_space(20.0);}
 
-                self.draw_image(frame,ui);
+                draw_image(self, frame,ui);
             }
+            //--------------------------------------------------------------------------------------
+            //HOTKEYS UI
 
+            //HOTKEY VIEW WINDOW
+            if self.get_request_state().equal("HOTKEY_WINDOW") ||self.get_request_state().equal("HOTKEYS_SELECTION") {
+                    //UI FOR HOTKEY SELECTION TYPE WINDOW
+                    if self.get_request_state().equal("HOTKEY_WINDOW"){
+                        ui.vertical(
+                            |ui|{
+                                draw_enable_hotkeys_shortcuts(self,ui);
+                            }
+                        );
+                        ui.with_layout(
+                            Layout::bottom_up(Align::Center),
+                            |ui|{
+                                ui.horizontal(
+                                    |ui|{
+                                        draw_add_hotkey_combobox(self,ui);
+                                        draw_select_hotkey(self,ui);
+                                        draw_back_menu_button(self,ui);
+                                    }
+                                );
+                                ui.add_space(20.0);
+                                ui.label("SCEGLI TRA LE FUNZIONI E SETTA LE SHORTCUTS");
+                            }
+                        );
+                    }else{
+                        //UI FOR HOTKEY SELECTION SHORTCUT WINDOW
+                        draw_shortcut_selection(self,ui);
+                        ui.add_space(30.0);
+                        ui.horizontal(
+                            |ui|{
+                                draw_ok_shortcut_button(self, ui);
+                                draw_delete_button(self, ui);
+                            }
+                        );
+                    }
+            }
         });
-    }
-}
-
-pub fn keyboard_control(event: Event){
-    if event.event_type == EventType::KeyPress(ControlLeft){
-        println!("hai premuto control left ");
     }
 }
