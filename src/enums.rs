@@ -26,6 +26,7 @@ pub mod app_enums{
         CHOICE_MONITOR, //caso di multi display sto alla schermata di scelta del monitor
         PROCESSED, //ho terminato la richiesta
         HOTKEY_WINDOW,
+        HOTKEYS_ADD,
         HOTKEYS_SELECTION //scelgo le hotkeys
     }
     impl RequestState{
@@ -36,6 +37,7 @@ pub mod app_enums{
                 "CHOICE_RECT" =>{self == RequestState::CHOICE_RECT},
                 "CHOICE_MONITOR" =>{self == RequestState::CHOICE_MONITOR},
                 "HOTKEY_WINDOW" =>{self == RequestState::HOTKEY_WINDOW},
+                "HOTKEYS_ADD" =>{self == RequestState::HOTKEYS_ADD},
                 "HOTKEYS_SELECTION" =>{self == RequestState::HOTKEYS_SELECTION},
                 "PROCESSED" =>{self == RequestState::PROCESSED},
                 _ => {panic!("INVALID STATE IN INPUT")}
@@ -68,20 +70,20 @@ pub mod app_enums{
             match self {
                 HotkeysFunctions::NewFull => {"FULL SCREEN"}
                 HotkeysFunctions::NewCustom => {"CUSTOM SCREEN"}
-                HotkeysFunctions::QuarterTopRight => {"QUARTER TOP >"}
-                HotkeysFunctions::QuarterTopLeft => {"QUARTER TOP <"}
-                HotkeysFunctions::QuarterDownRight => {"QUARTER DOWN >"}
-                HotkeysFunctions::QuarterDownLeft => {"QUARTER DOWN <"}
+                HotkeysFunctions::QuarterTopRight => {"1/4 TOP L"}
+                HotkeysFunctions::QuarterTopLeft => {"1/4 TOP R"}
+                HotkeysFunctions::QuarterDownRight => {"1/4 DOWN R"}
+                HotkeysFunctions::QuarterDownLeft => {"1/4 DOWN L"}
             }
         }
         pub fn into_enum(string: & str) -> Self{
             match string {
                 "FULL SCREEN" =>{HotkeysFunctions::NewFull},
                 "CUSTOM SCREEN" =>{HotkeysFunctions::NewCustom},
-                "QUARTER TOP >" =>{HotkeysFunctions::QuarterTopRight},
-                "QUARTER TOP <" =>{HotkeysFunctions::QuarterTopLeft},
-                "QUARTER DOWN >" =>{HotkeysFunctions::QuarterDownRight},
-                "QUARTER DOWN <" =>{HotkeysFunctions::QuarterDownLeft},
+                "1/4 TOP R" =>{HotkeysFunctions::QuarterTopRight},
+                "1/4 TOP L" =>{HotkeysFunctions::QuarterTopLeft},
+                "1/4 DOWN R" =>{HotkeysFunctions::QuarterDownRight},
+                "1/4 DOWN L" =>{HotkeysFunctions::QuarterDownLeft},
                 _ => {panic!("INVALID Hotkeys functions IN INPUT")}
             }
         }

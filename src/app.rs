@@ -36,6 +36,7 @@
         use crate::app::screen_utils;
         use image;
         use image::{DynamicImage};
+        use itertools::Itertools;
         use native_dialog::FileDialog;
         use crate::enums::app_enums::{HotkeysFunctions, ImageToShow, KeysEnum, RequestState, ScreenshotType};
         use crate::utils::utils::retained_image_from_dynamic;
@@ -132,11 +133,36 @@
             pub fn set_hotkey_selected(&mut self, function: HotkeysFunctions){self.hotkey_selected = function}
 
             pub fn set_hotkey_enable(&mut self, function: HotkeysFunctions, keys: Vec<KeysEnum>){
-                self.hotkeys_enable.insert(keys, function.to_string().to_string());
+                if !self.hotkeys_enable.values().contains(&function.to_string().to_string()){
+                    self.hotkeys_enable.insert(keys, function.to_string().to_string());
+                }else{
+                    //rimuovo l'elemento cercando la key associata al valore
+                    self.remove_from_map_by_value( function);
+                    //inserisco dopo aver eliminato
+                    self.hotkeys_enable.insert(keys, function.to_string().to_string());
+                }
             }
             pub fn set_key(&mut self, key: KeysEnum){self.keys.push(key)}
 
             pub fn set_pressed_key(&mut self, key: KeysEnum){self.press_keys.push(key)}
+
+            //--------------------------------------------------------------------------------------
+            //UTILS
+            pub fn erase_image_to_show(&mut self){
+                self.image.full_ret_image= None;
+                self.image.custom_ret_image = None;
+            }
+
+            pub fn remove_from_map_by_value(&mut self, value: HotkeysFunctions){
+                let remove_key = self.hotkeys_enable
+                    .iter()
+                    .find(|(_, &ref val)| val.eq_ignore_ascii_case(value.to_string()))
+                    .map(|(key, _)| key.clone());
+
+                if let Some(keys) = remove_key{
+                    self.hotkeys_enable.remove(&*keys);
+                }
+            }
             //--------------------------------------------------------------------------------------
             //PUBLIC METHOD
             ///take full display screenshot
@@ -188,7 +214,7 @@
                 if self.screen_type.equal("FULL"){
                     self.image_show=true;
                     let original_size = self.image.full_ret_image.as_mut().unwrap().size_vec2();
-                    frame.set_window_size(Vec2::new(original_size.x*0.65, original_size.y*0.65));
+                    frame.set_window_size(Vec2::new(original_size.x*0.65, original_size.y*0.65 + 30.0));
                     frame.request_user_attention(UserAttentionType::Informational);
                 }
                 //se tipo screenshot rect e ancora non ho scelto l'area massimizzo il frame
@@ -204,12 +230,12 @@
                         if width<600 && height<600{
                             frame.set_window_size(Vec2::new(600.0,600.0));
                         }else if width<600 && height>600{
-                            frame.set_window_size(Vec2::new(600.0, height as f32))
+                            frame.set_window_size(Vec2::new(600.0, height as f32 + 30.0))
                         }else if width>600 && height<600{
                             frame.set_window_size(Vec2::new(width as f32, 600.0))
                         }
                     }else{
-                        frame.set_window_size(Vec2::new(width as f32*1.1, height as f32*1.3));
+                        frame.set_window_size(Vec2::new(width as f32*1.1, height as f32*1.1+ 30.0));
                     }
                     frame.set_centered();
                 }
@@ -286,17 +312,25 @@
 
             ///execute hotkey_function
             pub fn do_hotkey_function(&mut self, function: HotkeysFunctions, frame: &mut eframe::Frame){
-                match function {
-                    HotkeysFunctions::NewFull => {
-                        if self.request_state == RequestState::INITIALIZED{
+                if self.request_state.equal("INITIALIZED") || self.request_state.equal("PROCESSED") || self.request_state.equal("HOTKEY_WINDOW"){
+                    match function {
+                        HotkeysFunctions::NewFull => {
+                            self.set_screen_type(ScreenshotType::FULL);
+                            self.set_request_state(RequestState::INITIALIZED);
+                            self.erase_image_to_show();
                             self.screen_request_init(frame);
                         }
+                        HotkeysFunctions::NewCustom => {
+                            self.set_screen_type(ScreenshotType::RECT);
+                            self.set_request_state(RequestState::INITIALIZED);
+                            self.erase_image_to_show();
+                            self.screen_request_init(frame);
+                        }
+                        HotkeysFunctions::QuarterTopRight => {}
+                        HotkeysFunctions::QuarterTopLeft => {}
+                        HotkeysFunctions::QuarterDownRight => {}
+                        HotkeysFunctions::QuarterDownLeft => {}
                     }
-                    HotkeysFunctions::NewCustom => {}
-                    HotkeysFunctions::QuarterTopRight => {}
-                    HotkeysFunctions::QuarterTopLeft => {}
-                    HotkeysFunctions::QuarterDownRight => {}
-                    HotkeysFunctions::QuarterDownLeft => {}
                 }
             }
 

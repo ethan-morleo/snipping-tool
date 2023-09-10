@@ -1,8 +1,9 @@
 
 use eframe::egui;
 use egui::{Align, CursorIcon, Layout};
-use crate::draw::draw_utils::{draw_add_hotkey_combobox, draw_back_button, draw_back_menu_button, draw_combobox, draw_copy_button, draw_delete_button, draw_enable_hotkeys_shortcuts, draw_erase_button, draw_file_picker, draw_image, draw_more_menu, draw_new_button, draw_ok_button, draw_ok_shortcut_button, draw_red_rect, draw_select_hotkey, draw_shortcut_selection};
-use crate::enums::app_enums::ScreenshotType;
+use itertools::Itertools;
+use crate::draw::draw_utils::{draw_add_hotkey_combobox, draw_back_button, draw_back_menu_button, draw_combobox, draw_copy_button, draw_delete_button, draw_delete_function_button, draw_enable_hotkeys_shortcuts, draw_erase_button, draw_file_picker, draw_image, draw_more_menu, draw_new_button, draw_ok_button, draw_ok_shortcut_button, draw_red_rect, draw_select_hotkey, draw_shortcut_selection};
+use crate::enums::app_enums::{RequestState, ScreenshotType};
 use crate::input::input::{control_keyboard, control_mouse_input};
 
 mod app;
@@ -90,36 +91,40 @@ impl eframe::App for app::app_utils::MyApp {
                                 draw_copy_button(self,ui,ctx,clipboard);
                             }
                         );
-                        ui.separator();
                     });
-
+                ui.separator();
                 if self.get_screen_type()==ScreenshotType::RECT {ui.add_space(20.0);}
-
                 draw_image(self, frame,ui);
             }
             //--------------------------------------------------------------------------------------
             //HOTKEYS UI
 
             //HOTKEY VIEW WINDOW
-            if self.get_request_state().equal("HOTKEY_WINDOW") ||self.get_request_state().equal("HOTKEYS_SELECTION") {
-                    //UI FOR HOTKEY SELECTION TYPE WINDOW
-                    if self.get_request_state().equal("HOTKEY_WINDOW"){
+            if self.get_request_state().equal("HOTKEY_WINDOW") ||self.get_request_state().equal("HOTKEYS_SELECTION") || self.get_request_state().equal("HOTKEYS_ADD"){
+                    //UI FOR HOTKEYS EDIT WINDOW
+                    if self.get_request_state().equal("HOTKEY_WINDOW") || self.get_request_state().equal("HOTKEYS_ADD"){
+
                         ui.vertical(
                             |ui|{
-                                draw_enable_hotkeys_shortcuts(self,ui);
+                                    draw_enable_hotkeys_shortcuts(self,ui);
                             }
                         );
                         ui.with_layout(
-                            Layout::bottom_up(Align::Center),
+                            Layout::bottom_up(Align::LEFT),
                             |ui|{
-                                ui.horizontal(
-                                    |ui|{
-                                        draw_add_hotkey_combobox(self,ui);
-                                        draw_select_hotkey(self,ui);
-                                        draw_back_menu_button(self,ui);
-                                    }
-                                );
-                                ui.add_space(20.0);
+                                    ui.horizontal(
+                                        |ui|{
+                                            if self.get_request_state().equal("HOTKEYS_ADD"){
+                                                draw_add_hotkey_combobox(self,ui);
+                                                draw_select_hotkey(self, ui);
+                                            }else{
+                                                if ui.button("ADD").clicked(){
+                                                    self.set_request_state(RequestState::HOTKEYS_ADD);
+                                                }
+                                            }
+                                            draw_back_menu_button(self,ui);
+                                        });
+                                ui.separator();
                                 ui.label("SCEGLI TRA LE FUNZIONI E SETTA LE SHORTCUTS");
                             }
                         );
@@ -127,10 +132,23 @@ impl eframe::App for app::app_utils::MyApp {
                         //UI FOR HOTKEY SELECTION SHORTCUT WINDOW
                         draw_shortcut_selection(self,ui);
                         ui.add_space(30.0);
+                        if !self.get_keys().is_empty() {
+                            ui.horizontal(
+                                |ui| {
+                                    draw_ok_shortcut_button(self, ui);
+                                    draw_delete_button(self, ui);
+                                }
+                            );
+                            ui.add_space(20.0);
+                        };
+                        ui.separator();
                         ui.horizontal(
                             |ui|{
-                                draw_ok_shortcut_button(self, ui);
-                                draw_delete_button(self, ui);
+                                draw_back_menu_button(self, ui);
+                                if self.get_hotkey_enable().values().contains(&self.get_hotkey_selected().to_string().to_string()){
+                                    ui.separator();
+                                    draw_delete_function_button(self,ui);
+                                }
                             }
                         );
                     }

@@ -5,12 +5,12 @@ pub(crate) mod draw_utils{
     use native_dialog::FileDialog;
     use crate::enums::app_enums::{HotkeysFunctions, RequestState, ScreenshotType};
     use crate::app::app_utils::MyApp;
-    use crate::utils::utils::{keys_string, sort_key_modifier};
+    use crate::utils::utils::{get_possible_hotkeys_functions, keys_string, sort_key_modifier};
 
     ///DRAW NEW SCREENSHOT BUTTON
     pub fn draw_new_button( app: &mut MyApp, frame:&mut eframe::Frame, ui: &mut Ui, ctx: &egui::Context){
         ui.add_space(30.0);
-        //new button
+
         if ui.add(egui::Button::image_and_text(
             app.get_icon(0).texture_id(ctx),
             Vec2::new(30.0, 30.0),
@@ -147,45 +147,54 @@ pub(crate) mod draw_utils{
     pub fn draw_more_menu(app: &mut MyApp, ui: &mut Ui, ctx: &egui::Context) {
         ui.menu_image_button(
             app.get_icon(7).texture_id(ctx),
-            Vec2::new(20.0,20.0),
+            Vec2::new(30.0,30.0),
             |ui| {
                 if ui.add(egui::Button::image_and_text(
                     app.get_icon(8).texture_id(ctx),
-                    Vec2::new(15.0, 15.0),
+                    Vec2::new(20.0, 20.0),
                     "Custom hotkeys"
                 )).clicked(){
                     app.set_request_state(RequestState::HOTKEY_WINDOW);
                     ui.close_menu();
                 }
+                ui.separator();
             });
     }
 
     ///LISTA DI TUTTE LE SHORTCUT CHE HAI ATTIVATO
     pub fn draw_enable_hotkeys_shortcuts(app: &mut MyApp, ui: &mut Ui){
         if !app.get_hotkey_enable().is_empty(){
-            ui.label("LE TUE SHORTCUTS : ");
-            ui.add_space(30.0);
+            ui.label("LE TUE SHORTCUTS PREMI PER MODIFICARLE :");
+            ui.separator();
+            ui.add_space(15.0);
                 for (mut k,v) in app.get_hotkey_enable(){
                     k.sort_by(sort_key_modifier);
                     let keys = keys_string(k);
-                    ui.label(format!("{function}: {keys}", function = v, keys = keys ));
+                    if app.get_request_state().equal("HOTKEYS_ADD"){
+                        ui.add_enabled(false, egui::Button::new(format!("{function}: {keys}", function = v, keys = keys )));
+                    }else{
+                        if ui.button(format!("{function}: {keys}", function = v, keys = keys )).clicked(){
+                            app.set_hotkey_selected(HotkeysFunctions::into_enum(v.as_str()));
+                            app.set_request_state(RequestState::HOTKEYS_SELECTION);
+                        }
+                    }
+                    ui.separator();
+                    ui.add_space(15.0);
                 }
         }
     }
 
-    ///ALL CUSTOM HOTKEYS FUNCTIONALITY
+    ///ALL CUSTOM HOTKEYS FUNCTIONALITY COMBOBOX
     pub fn draw_add_hotkey_combobox(app: &mut MyApp, ui: &mut Ui){
+        let all_selectable_functions = get_possible_hotkeys_functions(app.get_hotkey_enable());
+        if !all_selectable_functions.contains(&app.hotkey_selected){
+            app.set_hotkey_selected(all_selectable_functions[0]);
+        }
         ui.add_space(20.0);
         egui::ComboBox::new("+", "")
             .selected_text(format!("{:?}", app.get_hotkey_selected().to_string()))
             .show_ui(ui, |ui|{
-                for function in [
-                    HotkeysFunctions::NewFull,
-                    HotkeysFunctions::QuarterDownRight,
-                    HotkeysFunctions::QuarterDownLeft,
-                    HotkeysFunctions::QuarterTopLeft,
-                    HotkeysFunctions::QuarterTopRight
-                ] {
+                for function in all_selectable_functions {
                     ui.selectable_value(&mut app.hotkey_selected, function, format!("{:?}", function.to_string()));
                 }
             });
@@ -208,27 +217,44 @@ pub(crate) mod draw_utils{
 
     ///DROP SHORTCUT IF WRONG
     pub fn draw_delete_button(app: &mut MyApp, ui: &mut Ui){
-        if ui.button("DELETE").clicked(){
+        if ui.button("RESET").clicked(){
             app.clear_keys();
         }
     }
 
-    ///GO BACK FROM SHORTCUT MENU
+    ///DISABLE HOTKEY FUNCTIONS
+    pub fn draw_delete_function_button(app: &mut MyApp, ui: &mut Ui){
+        if ui.button("DELETE SHORTCUT").clicked(){
+            app.clear_keys();
+            app.remove_from_map_by_value(app.get_hotkey_selected());
+            app.set_request_state(RequestState::HOTKEY_WINDOW);
+        }
+    }
+
+    ///GO BACK FROM SHORTCUT MENU IN DIFFERENT STATES
     pub fn draw_back_menu_button(app: &mut MyApp, ui: &mut Ui){
         if ui.button("BACK").clicked(){
-            app.set_request_state(RequestState::INITIALIZED);
+            if app.get_request_state().equal("HOTKEY_WINDOW"){
+                app.set_request_state(RequestState::INITIALIZED);
+            }else if app.get_request_state().equal("HOTKEYS_SELECTION"){
+                app.clear_keys();
+                app.set_request_state(RequestState::HOTKEY_WINDOW);
+            }else if app.get_request_state().equal("HOTKEYS_ADD"){
+                app.set_request_state(RequestState::HOTKEY_WINDOW);
+            }
+
         }
     }
 
     ///SCELTA DELLA SHORTCUT
     pub fn draw_shortcut_selection(app: &mut MyApp, ui: &mut Ui){
     let keys = keys_string(app.get_keys());
-        ui.vertical(|ui|{
-            ui.horizontal(|ui|{
-                ui.label("PREMI I TASTI PER SELEZIONARE LA SHORTCUT");
-            })
+
+        ui.vertical_centered(|ui| {
+            ui.label(format!("PREMI I TASTI PER LA SHORTCUT: {function}", function = app.get_hotkey_selected().to_string()));
         });
-        ui.add_space(30.0);
+        ui.separator();
+        ui.add_space(20.0);
         ui.label(
             format!("HAI SELEZIONATO: {keys}", keys= keys)
         );
