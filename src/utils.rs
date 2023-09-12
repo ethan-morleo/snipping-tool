@@ -1,7 +1,7 @@
 pub mod utils{
-    use std::cmp::Ordering;
+    use std::cmp::{max, min, Ordering};
     use std::collections::HashMap;
-    use egui::{ColorImage, CursorIcon, Modifiers};
+    use egui::{ColorImage, CursorIcon, Modifiers, Pos2};
     use egui_extras::RetainedImage;
     use image::DynamicImage;
     use itertools::Itertools;
@@ -67,7 +67,7 @@ pub mod utils{
 
     ///method to set keys or pressed keys
     pub fn set_keys_or_press_keys(app: &mut MyApp, state: RequestState, key: KeysEnum){
-        if state.equal("HOTKEYS_SELECTION"){
+        if state.equal("HotkeysSelection"){
             app.set_key(key);
         }else{
             app.set_pressed_key(key);
@@ -120,12 +120,46 @@ pub mod utils{
     }
     pub fn set_cursor(app : &MyApp, ctx: &egui::Context){
         if let Some(edit) = app.get_rect_edit(){
-            match edit {
-                RectEdit::Horizontal=> {ctx.set_cursor_icon(CursorIcon::ResizeHorizontal)}
-                RectEdit::Vertical=> {ctx.set_cursor_icon(CursorIcon::ResizeVertical)}
+            if edit == RectEdit::HorizontalLeft || edit == RectEdit::HorizontalRight{
+                ctx.set_cursor_icon(CursorIcon::ResizeHorizontal)
+            }else{
+                ctx.set_cursor_icon(CursorIcon::ResizeVertical)
             }
         }else{
             ctx.set_cursor_icon(CursorIcon::Default);
+        }
+    }
+
+    pub fn change_rect(app : &mut MyApp, case: i32, position_to_update: f32){
+        match case {
+            1 =>{
+                if app.get_rect_position()[0].x as i32 == min(app.get_rect_position()[0].x as i32, app.get_rect_position()[1].x as i32){
+                    app.set_rect_position(1, Pos2::new(position_to_update, app.get_rect_position()[0].y))
+                }else{
+                    app.set_rect_position(2, Pos2::new(position_to_update, app.get_rect_position()[1].y))
+                }
+            }
+            2 =>{
+                if app.get_rect_position()[0].x as i32 == max(app.get_rect_position()[0].x as i32, app.get_rect_position()[1].x as i32){
+                app.set_rect_position(1, Pos2::new(position_to_update, app.get_rect_position()[0].y))
+            }else{
+                app.set_rect_position(2, Pos2::new(position_to_update, app.get_rect_position()[1].y))
+            }}
+            3 => {
+                if app.get_rect_position()[0].y as i32 == max(app.get_rect_position()[0].y as i32, app.get_rect_position()[1].y as i32) {
+                    app.set_rect_position(1, Pos2::new(app.get_rect_position()[0].x, position_to_update))
+                } else {
+                    app.set_rect_position(2, Pos2::new(app.get_rect_position()[1].x, position_to_update))
+                }
+            }
+            4 =>{
+                if app.get_rect_position()[0].y as i32 == min(app.get_rect_position()[0].y as i32, app.get_rect_position()[1].y as i32){
+                    app.set_rect_position(1, Pos2::new(app.get_rect_position()[0].x, position_to_update))
+                }else{
+                    app.set_rect_position(2, Pos2::new(app.get_rect_position()[1].x, position_to_update))
+                }
+            }
+            _ => {}
         }
     }
 }

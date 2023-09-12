@@ -37,7 +37,6 @@
         use image;
         use image::{DynamicImage};
         use itertools::Itertools;
-        use native_dialog::FileDialog;
         use crate::enums::app_enums::{HotkeysFunctions, ImageToShow, KeysEnum, RectEdit, RequestState, ScreenshotType};
         use crate::utils::utils::retained_image_from_dynamic;
 
@@ -67,7 +66,7 @@
             //default initialization of the app struct
             fn default() -> Self {
                 Self{
-                    request_state:RequestState::INITIALIZED,
+                    request_state:RequestState::Initialized,
                     image:ImageToShow::default(),
                     image_raw:None,
                     image_show:false,
@@ -98,7 +97,8 @@
             pub fn get_rect_position(&self) -> [Pos2;2]{ self.rect_positions }
             pub fn get_image_raw(&mut self) -> &mut DynamicImage{self.image_raw.as_mut().unwrap()}
             pub fn get_full_image(&mut self) -> &mut RetainedImage{self.image.full_ret_image.as_mut().unwrap()}
-            pub fn get_rect_image(&mut self) -> &mut RetainedImage{self.image.custom_ret_image.as_mut().unwrap()}
+            // TODO:
+            //pub fn get_rect_image(&mut self) -> &mut RetainedImage{self.image.custom_ret_image.as_mut().unwrap()}
             pub fn get_hotkey_enable(&self) -> HashMap<Vec<KeysEnum>, String>{self.hotkeys_enable.clone()}
             pub fn get_hotkey_selected(&self) -> HotkeysFunctions{self.hotkey_selected}
             pub fn get_keys(&self) -> Vec<KeysEnum>{self.keys.clone()}
@@ -181,7 +181,7 @@
                 let displays = screen_utils::get_screen_number();
                 self.is_multi_display = displays>1;
                 self.screen_number = displays;
-                self.request_state= RequestState::INCOMPLETE;
+                self.request_state= RequestState::Incomplete;
                 //adjust frame to take screenshot easily
                 if self.screen_type.equal("FULL")  && !self.is_multi_display{
                     frame.set_minimized(true);
@@ -250,19 +250,20 @@
             /// going in choice monitor if multi display usage
             pub fn process_incomplete_request(&mut self){
                 self.erased =false;
+                self.rect_shown = false;
                 if !self.is_multi_display{
                     //caso full
                     if self.screen_type.equal("FULL"){
                         self.full_screenshot(&screen_utils::get_screen(0));
-                        self.set_request_state(RequestState::PROCESSED);
+                        self.set_request_state(RequestState::Processed);
                     }
                     //caso rect
                     else{
                         self.full_screenshot(&screen_utils::get_screen(0));
-                        self.set_request_state(RequestState::CHOICE_RECT);
+                        self.set_request_state(RequestState::ChoiceRect);
                     }
                 }else{
-                    self.request_state = RequestState::CHOICE_MONITOR;
+                    self.request_state = RequestState::ChoiceMonitor;
                 }
 
             }
@@ -317,17 +318,20 @@
 
             ///execute hotkey_function
             pub fn do_hotkey_function(&mut self, function: HotkeysFunctions, frame: &mut eframe::Frame){
-                if self.request_state.equal("INITIALIZED") || self.request_state.equal("PROCESSED") || self.request_state.equal("HOTKEY_WINDOW"){
+                if self.request_state.equal("INITIALIZED") || self.request_state.equal("PROCESSED") || self.request_state.equal("HotkeyWindow"){
                     match function {
                         HotkeysFunctions::NewFull => {
                             self.set_screen_type(ScreenshotType::FULL);
-                            self.set_request_state(RequestState::INITIALIZED);
+                            self.set_request_state(RequestState::Initialized);
                             self.erase_image_to_show();
                             self.screen_request_init(frame);
                         }
                         HotkeysFunctions::NewCustom => {
                             self.set_screen_type(ScreenshotType::RECT);
-                            self.set_request_state(RequestState::INITIALIZED);
+                            self.rect_choosen = false;
+                            self.set_rect_position(1,Pos2::new(0.0,0.0));
+                            self.set_rect_position(2,Pos2::new(0.0,0.0));
+                            self.set_request_state(RequestState::Initialized);
                             self.erase_image_to_show();
                             self.screen_request_init(frame);
                         }
@@ -349,7 +353,7 @@
             //--------------------------------------------------------------------------------------
             //REINIT APP FOR HANDLING PREVIOUS STATES
             pub(crate) fn reinit_app(&mut self){
-                self.request_state=RequestState::INITIALIZED;
+                self.request_state=RequestState::Initialized;
                 self.image=ImageToShow::default();
                 self.image_raw= None;
                 self.erased=false;

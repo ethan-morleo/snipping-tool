@@ -6,7 +6,7 @@ pub(crate) mod input{
     use itertools::Itertools;
     use crate::enums::app_enums::{HotkeysFunctions, KeysEnum, RectEdit};
     use crate::app::app_utils::MyApp;
-    use crate::utils::utils::{find_modifier, set_keys_or_press_keys, sort_keys};
+    use crate::utils::utils::{change_rect, find_modifier, set_keys_or_press_keys, sort_keys};
 
     ///method to control mouse
     pub fn control_mouse_input(app: &mut MyApp, ctx: & egui::Context){
@@ -40,27 +40,53 @@ pub(crate) mod input{
                         let max_y = max(app.get_rect_position()[0].y as i32, app.get_rect_position()[1].y as i32);
                         let mut mouse_pos: Pos2 = Pos2::default();
                         if i.pointer.hover_pos().is_some(){mouse_pos = i.pointer.hover_pos().unwrap()}
-                        //horizontal left
-                        if (mouse_pos.x > min_x as f32 -15.0 && mouse_pos.x < min_x as f32 +15.0) && (mouse_pos.y>min_y as f32 && mouse_pos.y<max_y as f32){
-                            app.set_rect_edit(Some(RectEdit::Horizontal));
+                        if i.pointer.primary_down(){
+                            if let Some(edit) = app.get_rect_edit(){
+                                match edit{
+                                    RectEdit::HorizontalLeft => {
+                                        if mouse_pos.y>min_y as f32 && mouse_pos.y<max_y as f32{
+                                            change_rect(app,1,mouse_pos.x)
+                                        }
+                                    }
+                                    RectEdit::HorizontalRight => {
+                                        if mouse_pos.y>min_y as f32 && mouse_pos.y<max_y as f32{
+                                            change_rect(app,2,mouse_pos.x)
+                                        }
+                                    }
+                                    RectEdit::VerticalTop => {
+                                        if mouse_pos.x>min_x as f32 && mouse_pos.x<max_x as f32{
+                                            change_rect(app,4,mouse_pos.y)
+                                        }
+                                    }
+                                    RectEdit::VerticalDown => {
+                                        if mouse_pos.x>min_x as f32 && mouse_pos.x<max_x as f32{
+                                            change_rect(app,3,mouse_pos.y)
+                                        }
+                                    }
+                                }
+                            }
+                        }else{
+                            //horizontal left
+                            if (mouse_pos.x > min_x as f32 -30.0 && mouse_pos.x < min_x as f32 +30.0) && (mouse_pos.y>min_y as f32 && mouse_pos.y<max_y as f32){
+                                app.set_rect_edit(Some(RectEdit::HorizontalLeft));
+                            }
+                            else if (mouse_pos.x > max_x as f32-30.0 && mouse_pos.x <max_x as f32+30.0) && (mouse_pos.y>min_y as f32 && mouse_pos.y<max_y as f32) {
+                                app.set_rect_edit(Some(RectEdit::HorizontalRight));
+                            }
+                            //vertical top
+                            else if (mouse_pos.y > min_y as f32 -30.0 && mouse_pos.y < min_y as f32 +30.0) && (mouse_pos.x>min_x as f32 && mouse_pos.x<max_x as f32){
+                                app.set_rect_edit(Some(RectEdit::VerticalTop));
+                            }
+                            else if (mouse_pos.y > max_y as f32 -30.0 as f32 && mouse_pos.y < max_y as f32 +30.0) && (mouse_pos.x>min_x as f32 && mouse_pos.x<max_x as f32){
+                                app.set_rect_edit(Some(RectEdit::VerticalDown));
+                            }
+                            // other positions
+                            else{
+                                app.set_rect_edit(None);
+                            }
                         }
-                        //horizontal right
-                        else if (mouse_pos.x > max_x as f32-15.0 && mouse_pos.x <max_x as f32+15.0) && (mouse_pos.y>min_y as f32 && mouse_pos.y<max_y as f32){
-                            app.set_rect_edit(Some(RectEdit::Horizontal));
-                        }
-                        //vertical top
-                        else if (mouse_pos.y > max_y as f32-15.0 as f32 && mouse_pos.y < max_y as f32 +15.0) && (mouse_pos.x>min_x as f32 && mouse_pos.x<max_x as f32){
-                            app.set_rect_edit(Some(RectEdit::Vertical));
-                        }
-                        //vertical down
-                        else if (mouse_pos.y > min_y as f32 -15.0 && mouse_pos.y < min_y as f32 +15.0  ) && (mouse_pos.x>min_x as f32 && mouse_pos.x<max_x as f32){
-                            app.set_rect_edit(Some(RectEdit::Vertical));
-                        }
-                        else{
-                           app.set_rect_edit(None);
-                        }
-                    }
 
+                    }
                 }else{
                     app.set_outside_rect(true);
                 }
@@ -88,7 +114,7 @@ pub(crate) mod input{
                                         modifier.iter().for_each(|modifier| set_keys_or_press_keys(app,app.get_request_state(),KeysEnum::Modifier(*modifier)));
                                     }
                                     set_keys_or_press_keys(app,app.get_request_state(),KeysEnum::Key(*key))
-                                } else if !*pressed && !app.get_request_state().equal("HOTKEYS_SELECTION") {
+                                } else if !*pressed && !app.get_request_state().equal("HotkeysSelection") {
                                     //cerco corrispondenza nella mappa se non è vuota
                                     if !app.get_hotkey_enable().is_empty() {
                                         for (k, v) in app.get_hotkey_enable() {

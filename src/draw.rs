@@ -16,7 +16,7 @@ pub(crate) mod draw_utils{
             Vec2::new(30.0, 30.0),
             "NEW"
         )).clicked(){
-            if app.get_request_state()==RequestState::INITIALIZED{
+            if app.get_request_state()==RequestState::Initialized {
                 app.screen_request_init(frame);
             }else{
                 let screen_type = app.get_screen_type();
@@ -114,7 +114,7 @@ pub(crate) mod draw_utils{
             if app.is_rect_shown(){
                 app.replace_image_with_rect();
                 app.set_rect_choosen(true);
-                app.set_request_state(RequestState::PROCESSED); //transition to final state
+                app.set_request_state(RequestState::Processed); //transition to final state
             }
         }
     }
@@ -161,7 +161,7 @@ pub(crate) mod draw_utils{
                     Vec2::new(20.0, 20.0),
                     "Custom hotkeys"
                 )).clicked(){
-                    app.set_request_state(RequestState::HOTKEY_WINDOW);
+                    app.set_request_state(RequestState::HotkeyWindow);
                     ui.close_menu();
                 }
                 ui.separator();
@@ -177,12 +177,12 @@ pub(crate) mod draw_utils{
                 for (mut k,v) in app.get_hotkey_enable(){
                     k.sort_by(sort_key_modifier);
                     let keys = keys_string(k);
-                    if app.get_request_state().equal("HOTKEYS_ADD"){
+                    if app.get_request_state().equal("HotkeysAdd"){
                         ui.add_enabled(false, egui::Button::new(format!("{function}: {keys}", function = v, keys = keys )));
                     }else{
                         if ui.button(format!("{function}: {keys}", function = v, keys = keys )).clicked(){
                             app.set_hotkey_selected(HotkeysFunctions::into_enum(v.as_str()));
-                            app.set_request_state(RequestState::HOTKEYS_SELECTION);
+                            app.set_request_state(RequestState::HotkeysSelection);
                         }
                     }
                     ui.separator();
@@ -210,7 +210,7 @@ pub(crate) mod draw_utils{
     ///SELECT BUTTON IN SHORTCUT SELECTION
     pub fn draw_select_hotkey(app: &mut MyApp, ui: &mut Ui){
         if ui.button("SELECT").clicked(){
-            app.set_request_state(RequestState::HOTKEYS_SELECTION);
+            app.set_request_state(RequestState::HotkeysSelection);
         }
     }
     ///OK BUTTON IN SHORTCUT SELECTION
@@ -218,7 +218,7 @@ pub(crate) mod draw_utils{
         if ui.button("OK").clicked(){
             app.set_hotkey_enable(app.get_hotkey_selected(), app.get_keys());
             app.clear_keys();
-            app.set_request_state(RequestState::HOTKEY_WINDOW);
+            app.set_request_state(RequestState::HotkeyWindow);
         }
     }
 
@@ -234,20 +234,20 @@ pub(crate) mod draw_utils{
         if ui.button("DELETE SHORTCUT").clicked(){
             app.clear_keys();
             app.remove_from_map_by_value(app.get_hotkey_selected());
-            app.set_request_state(RequestState::HOTKEY_WINDOW);
+            app.set_request_state(RequestState::HotkeyWindow);
         }
     }
 
     ///GO BACK FROM SHORTCUT MENU IN DIFFERENT STATES
     pub fn draw_back_menu_button(app: &mut MyApp, ui: &mut Ui){
         if ui.button("BACK").clicked(){
-            if app.get_request_state().equal("HOTKEY_WINDOW"){
-                app.set_request_state(RequestState::INITIALIZED);
-            }else if app.get_request_state().equal("HOTKEYS_SELECTION"){
+            if app.get_request_state().equal("HotkeyWindow"){
+                app.set_request_state(RequestState::Initialized);
+            }else if app.get_request_state().equal("HotkeysSelection"){
                 app.clear_keys();
-                app.set_request_state(RequestState::HOTKEY_WINDOW);
-            }else if app.get_request_state().equal("HOTKEYS_ADD"){
-                app.set_request_state(RequestState::HOTKEY_WINDOW);
+                app.set_request_state(RequestState::HotkeyWindow);
+            }else if app.get_request_state().equal("HotkeysAdd"){
+                app.set_request_state(RequestState::HotkeyWindow);
             }
 
         }

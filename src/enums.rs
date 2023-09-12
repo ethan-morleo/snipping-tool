@@ -20,26 +20,26 @@ pub mod app_enums{
     ///enum for all request state
     #[derive(Debug, PartialEq, Copy, Clone)]
     pub enum RequestState{
-        INITIALIZED, //non ho premuto il tasto +
-        INCOMPLETE, //caso in cui ho premuto il tasto + e devo fare lo screen
-        CHOICE_RECT, //ho fatto lo screen per la fake trasparenza devo scegliere il rettangolo
-        CHOICE_MONITOR, //caso di multi display sto alla schermata di scelta del monitor
-        PROCESSED, //ho terminato la richiesta
-        HOTKEY_WINDOW,
-        HOTKEYS_ADD,
-        HOTKEYS_SELECTION //scelgo le hotkeys
+        Initialized, //non ho premuto il tasto +
+        Incomplete, //caso in cui ho premuto il tasto + e devo fare lo screen
+        ChoiceRect, //ho fatto lo screen per la fake trasparenza devo scegliere il rettangolo
+        ChoiceMonitor, //caso di multi display sto alla schermata di scelta del monitor
+        Processed, //ho terminato la richiesta
+        HotkeyWindow,
+        HotkeysAdd,
+        HotkeysSelection //scelgo le hotkeys
     }
     impl RequestState{
         pub fn equal(self, state:&str) -> bool {
             match state{
-                "INITIALIZED" =>{self ==RequestState::INITIALIZED},
-                "INCOMPLETE" =>{self ==RequestState::INCOMPLETE},
-                "CHOICE_RECT" =>{self == RequestState::CHOICE_RECT},
-                "CHOICE_MONITOR" =>{self == RequestState::CHOICE_MONITOR},
-                "HOTKEY_WINDOW" =>{self == RequestState::HOTKEY_WINDOW},
-                "HOTKEYS_ADD" =>{self == RequestState::HOTKEYS_ADD},
-                "HOTKEYS_SELECTION" =>{self == RequestState::HOTKEYS_SELECTION},
-                "PROCESSED" =>{self == RequestState::PROCESSED},
+                "INITIALIZED" =>{self ==RequestState::Initialized },
+                "INCOMPLETE" =>{self ==RequestState::Incomplete },
+                "ChoiceRect" =>{self == RequestState::ChoiceRect },
+                "ChoiceMonitor" =>{self == RequestState::ChoiceMonitor },
+                "HotkeyWindow" =>{self == RequestState::HotkeyWindow },
+                "HotkeysAdd" =>{self == RequestState::HotkeysAdd },
+                "HotkeysSelection" =>{self == RequestState::HotkeysSelection },
+                "PROCESSED" =>{self == RequestState::Processed },
                 _ => {panic!("INVALID STATE IN INPUT")}
             }
         }
@@ -55,7 +55,8 @@ pub mod app_enums{
         QuarterDownLeft
     }
     impl HotkeysFunctions{
-        pub fn equal(self, state:&str) -> bool {
+        // TODO:
+        /* pub fn equal(self, state:&str) -> bool {
             match state{
                 "NewFull" =>{self ==HotkeysFunctions::NewFull},
                 "NewCustom" =>{self ==HotkeysFunctions::NewCustom},
@@ -65,7 +66,7 @@ pub mod app_enums{
                 "QuarterDownRight" =>{self == HotkeysFunctions::QuarterDownRight}
                 _ => {panic!("INVALID Hotkeys functions IN INPUT")}
             }
-        }
+        } */
         pub fn to_string(self) -> &'static str {
             match self {
                 HotkeysFunctions::NewFull => {"FULL SCREEN"}
@@ -108,7 +109,9 @@ pub mod app_enums{
 
     #[derive(Debug, PartialEq, Copy, Clone, Eq)]
     pub enum RectEdit{
-        Horizontal,
-        Vertical
+        HorizontalLeft,
+        HorizontalRight,
+        VerticalTop,
+        VerticalDown
     }
 }

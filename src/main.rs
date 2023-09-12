@@ -58,7 +58,7 @@ impl eframe::App for app::app_utils::MyApp {
             }
             //--------------------------------------------------------------------------------------
             //UI FOR CHOOSING SCREENSHOT CUSTOM AREA
-            if self.get_request_state().equal("CHOICE_RECT"){
+            if self.get_request_state().equal("ChoiceRect"){
                 ui.horizontal(
                     |ui|{
                         draw_image(self, frame,ui);
@@ -105,9 +105,9 @@ impl eframe::App for app::app_utils::MyApp {
             //HOTKEYS UI
 
             //HOTKEY VIEW WINDOW
-            if self.get_request_state().equal("HOTKEY_WINDOW") ||self.get_request_state().equal("HOTKEYS_SELECTION") || self.get_request_state().equal("HOTKEYS_ADD"){
+            if self.get_request_state().equal("HotkeyWindow") ||self.get_request_state().equal("HotkeysSelection") || self.get_request_state().equal("HotkeysAdd"){
                     //UI FOR HOTKEYS EDIT WINDOW
-                    if self.get_request_state().equal("HOTKEY_WINDOW") || self.get_request_state().equal("HOTKEYS_ADD"){
+                    if self.get_request_state().equal("HotkeyWindow") || self.get_request_state().equal("HotkeysAdd"){
 
                         ui.vertical(
                             |ui|{
@@ -119,12 +119,12 @@ impl eframe::App for app::app_utils::MyApp {
                             |ui|{
                                     ui.horizontal(
                                         |ui|{
-                                            if self.get_request_state().equal("HOTKEYS_ADD"){
+                                            if self.get_request_state().equal("HotkeysAdd"){
                                                 draw_add_hotkey_combobox(self,ui);
                                                 draw_select_hotkey(self, ui);
                                             }else{
                                                 if ui.button("ADD").clicked(){
-                                                    self.set_request_state(RequestState::HOTKEYS_ADD);
+                                                    self.set_request_state(RequestState::HotkeysAdd);
                                                 }
                                             }
                                             draw_back_menu_button(self,ui);
