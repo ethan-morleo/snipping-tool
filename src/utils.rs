@@ -1,11 +1,11 @@
 pub mod utils{
     use std::cmp::Ordering;
     use std::collections::HashMap;
-    use egui::{ColorImage, Modifiers};
+    use egui::{ColorImage, CursorIcon, Modifiers};
     use egui_extras::RetainedImage;
     use image::DynamicImage;
     use itertools::Itertools;
-    use crate::enums::app_enums::{HotkeysFunctions, KeysEnum, RequestState};
+    use crate::enums::app_enums::{HotkeysFunctions, KeysEnum, RectEdit, RequestState};
     use crate::app::app_utils::MyApp;
     ///retained image from  dynamic image
     pub fn retained_image_from_dynamic(dyn_image:&DynamicImage) -> Option<RetainedImage> {
@@ -117,5 +117,15 @@ pub mod utils{
             |function| !enable_functions.values().map(|v| HotkeysFunctions::into_enum(v.as_str())).contains(function)
         );
         all_functions
+    }
+    pub fn set_cursor(app : &MyApp, ctx: &egui::Context){
+        if let Some(edit) = app.get_rect_edit(){
+            match edit {
+                RectEdit::Horizontal=> {ctx.set_cursor_icon(CursorIcon::ResizeHorizontal)}
+                RectEdit::Vertical=> {ctx.set_cursor_icon(CursorIcon::ResizeVertical)}
+            }
+        }else{
+            ctx.set_cursor_icon(CursorIcon::Default);
+        }
     }
 }

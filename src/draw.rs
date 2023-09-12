@@ -1,7 +1,7 @@
 pub(crate) mod draw_utils{
     use arboard::{Clipboard};
     use eframe::emath::Vec2;
-    use egui::{Color32, emath, Rounding, Stroke, Ui};
+    use egui::{Color32, emath, Pos2, Rounding, Stroke, Ui};
     use native_dialog::FileDialog;
     use crate::enums::app_enums::{HotkeysFunctions, RequestState, ScreenshotType};
     use crate::app::app_utils::MyApp;
@@ -127,7 +127,14 @@ pub(crate) mod draw_utils{
                 Vec2::new(70.0,70.0)
             )
         ).clicked(){
-            app.go_back();
+            if app.is_rect_shown(){
+                app.set_rect_shown(false);
+                app.set_rect_position(1, Pos2::new(0.0,0.0));
+                app.set_rect_position(2, Pos2::new(0.0,0.0));
+            }else{
+                app.go_back();
+            }
+
         }
     }
 

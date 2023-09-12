@@ -1,8 +1,10 @@
 pub(crate) mod input{
+    use std::cmp::{max, min};
     use arboard::Clipboard;
     use egui::Event::Key;
+    use egui::Pos2;
     use itertools::Itertools;
-    use crate::enums::app_enums::{HotkeysFunctions, KeysEnum};
+    use crate::enums::app_enums::{HotkeysFunctions, KeysEnum, RectEdit};
     use crate::app::app_utils::MyApp;
     use crate::utils::utils::{find_modifier, set_keys_or_press_keys, sort_keys};
 
@@ -10,19 +12,55 @@ pub(crate) mod input{
     pub fn control_mouse_input(app: &mut MyApp, ctx: & egui::Context){
         ctx.input(
             |i|{
-                //ho iniziato a fare la diagonale del rettangolo
-                //controllo che il mouse sia dentro l'immagine
+
                 if !(i.pointer.hover_pos().is_some() && i.pointer.hover_pos().unwrap().x>((app.get_full_image().width() as f32*0.92) + 12.0)){
                     app.set_outside_rect(false);
-                    if i.pointer.primary_pressed(){
-                        app.set_rect_position(1,i.pointer.press_origin().unwrap());
-                        app.set_rect_position(2,i.pointer.press_origin().unwrap());
-                    }
-                    if i.pointer.is_decidedly_dragging(){
-                        if i.pointer.primary_down(){
-                            app.set_rect_position(2, i.pointer.interact_pos().unwrap());
+                    if !app.is_rect_shown(){
+                        if i.pointer.primary_pressed(){
+                            let origin = i.pointer.press_origin().unwrap();
+                            app.set_rect_position(1,origin);
+                            app.set_rect_position(2,origin);
+                        }
+                        if i.pointer.is_decidedly_dragging(){
+                            if i.pointer.primary_down(){
+                                let pos= i.pointer.interact_pos().unwrap();
+                                app.set_rect_position(2, pos);
+                            }else{
+                                let positions = app.get_rect_position();
+                                if positions[0] != positions[1]{
+                                    app.set_rect_shown(true);
+                                }
+                            }
+                        }
+                    }else{
+                        //dragging feature
+                        let min_x = min(app.get_rect_position()[0].x as i32, app.get_rect_position()[1].x as i32);
+                        let min_y = min(app.get_rect_position()[0].y as i32, app.get_rect_position()[1].y as i32);
+                        let max_x = max(app.get_rect_position()[0].x as i32, app.get_rect_position()[1].x as i32);
+                        let max_y = max(app.get_rect_position()[0].y as i32, app.get_rect_position()[1].y as i32);
+                        let mut mouse_pos: Pos2 = Pos2::default();
+                        if i.pointer.hover_pos().is_some(){mouse_pos = i.pointer.hover_pos().unwrap()}
+                        //horizontal left
+                        if (mouse_pos.x > min_x as f32 -15.0 && mouse_pos.x < min_x as f32 +15.0) && (mouse_pos.y>min_y as f32 && mouse_pos.y<max_y as f32){
+                            app.set_rect_edit(Some(RectEdit::Horizontal));
+                        }
+                        //horizontal right
+                        else if (mouse_pos.x > max_x as f32-15.0 && mouse_pos.x <max_x as f32+15.0) && (mouse_pos.y>min_y as f32 && mouse_pos.y<max_y as f32){
+                            app.set_rect_edit(Some(RectEdit::Horizontal));
+                        }
+                        //vertical top
+                        else if (mouse_pos.y > max_y as f32-15.0 as f32 && mouse_pos.y < max_y as f32 +15.0) && (mouse_pos.x>min_x as f32 && mouse_pos.x<max_x as f32){
+                            app.set_rect_edit(Some(RectEdit::Vertical));
+                        }
+                        //vertical down
+                        else if (mouse_pos.y > min_y as f32 -15.0 && mouse_pos.y < min_y as f32 +15.0  ) && (mouse_pos.x>min_x as f32 && mouse_pos.x<max_x as f32){
+                            app.set_rect_edit(Some(RectEdit::Vertical));
+                        }
+                        else{
+                           app.set_rect_edit(None);
                         }
                     }
+
                 }else{
                     app.set_outside_rect(true);
                 }

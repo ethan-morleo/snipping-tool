@@ -105,4 +105,10 @@ pub mod app_enums{
         Key(egui::Key),
         Modifier(Modifiers)
     }
+
+    #[derive(Debug, PartialEq, Copy, Clone, Eq)]
+    pub enum RectEdit{
+        Horizontal,
+        Vertical
+    }
 }

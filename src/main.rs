@@ -5,6 +5,7 @@ use itertools::Itertools;
 use crate::draw::draw_utils::{draw_add_hotkey_combobox, draw_back_button, draw_back_menu_button, draw_combobox, draw_copy_button, draw_delete_button, draw_delete_function_button, draw_enable_hotkeys_shortcuts, draw_erase_button, draw_file_picker, draw_image, draw_more_menu, draw_new_button, draw_ok_button, draw_ok_shortcut_button, draw_red_rect, draw_select_hotkey, draw_shortcut_selection};
 use crate::enums::app_enums::{RequestState, ScreenshotType};
 use crate::input::input::{control_keyboard, control_mouse_input};
+use crate::utils::utils::set_cursor;
 
 mod app;
 mod draw;
@@ -30,13 +31,13 @@ impl eframe::App for app::app_utils::MyApp {
         let clipboard = &mut arboard::Clipboard::new().unwrap();
         frame.set_decorations(true);
         ctx.set_pixels_per_point(1.0);
-
         //------------------------------------------------------------------------------------------
         //state change from incomplete, no ui needed
         if self.get_request_state().equal("INCOMPLETE"){
            self.process_incomplete_request();
         }
         egui::CentralPanel::default().show(ctx, |ui| {
+
             control_keyboard(self,ctx, frame, clipboard);
 
 
@@ -62,6 +63,7 @@ impl eframe::App for app::app_utils::MyApp {
                     |ui|{
                         draw_image(self, frame,ui);
                         control_mouse_input(self, ctx);
+
                         ui.add_space(15.0);
                         ui.vertical(
                           |ui|{
@@ -69,9 +71,12 @@ impl eframe::App for app::app_utils::MyApp {
                               draw_back_button(self,ui,ctx);
                           }
                         );
-                        if !self.is_outside_rect(){
+                        if !self.is_outside_rect() && !self.is_rect_shown(){
                             ctx.set_cursor_icon(CursorIcon::Crosshair);
+                        } else if self.is_rect_shown(){
+                            set_cursor(self, ctx);
                         }
+
                         draw_red_rect(self, ui);
                     }
                 );

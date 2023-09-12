@@ -38,7 +38,7 @@
         use image::{DynamicImage};
         use itertools::Itertools;
         use native_dialog::FileDialog;
-        use crate::enums::app_enums::{HotkeysFunctions, ImageToShow, KeysEnum, RequestState, ScreenshotType};
+        use crate::enums::app_enums::{HotkeysFunctions, ImageToShow, KeysEnum, RectEdit, RequestState, ScreenshotType};
         use crate::utils::utils::retained_image_from_dynamic;
 
 
@@ -56,7 +56,9 @@
             is_multi_display: bool,
             screen_number: usize,
             rect_positions: [Pos2;2],
+            rect_edit: Option<RectEdit>,
             outside_rect: bool,
+            rect_shown: bool,
             rect_choosen: bool,
             icons: Vec<RetainedImage>,
         }
@@ -78,6 +80,8 @@
                     is_multi_display:false,
                     screen_number:0,
                     rect_positions:[Pos2::new(0.0,0.0), Pos2::new(0.0,0.0)],
+                    rect_edit : None,
+                    rect_shown: false,
                     outside_rect:false,
                     rect_choosen:false,
                     icons:init_icons()
@@ -104,11 +108,8 @@
             }
             pub fn is_outside_rect(&self) -> bool{self.outside_rect}
             pub fn is_rect_choosen(&self) ->bool{self.rect_choosen}
-            pub fn is_rect_shown(&self)->bool{
-                //se vedo il rettangolo rosso i due elementi sono diversi tra loro e non sono entrambi uguali a 0
-                self.rect_positions[0]!=Pos2::new(0.0,0.0) && self.rect_positions[1]!= Pos2::new(0.0,0.0)
-            }
-
+            pub fn is_rect_shown(&self)->bool{ self.rect_shown }
+            pub fn get_rect_edit(&self) -> Option<RectEdit>{self.rect_edit.clone()}
             //--------------------------------------------------------------------------------------
             //SETTER
             pub fn set_request_state(&mut self, state: RequestState){
@@ -145,6 +146,10 @@
             pub fn set_key(&mut self, key: KeysEnum){self.keys.push(key)}
 
             pub fn set_pressed_key(&mut self, key: KeysEnum){self.press_keys.push(key)}
+
+            pub fn set_rect_shown(&mut self, value: bool){self.rect_shown = value}
+
+            pub fn set_rect_edit(&mut self, value: Option<RectEdit>){self.rect_edit = value}
 
             //--------------------------------------------------------------------------------------
             //UTILS
