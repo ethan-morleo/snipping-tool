@@ -27,8 +27,6 @@
         use std::borrow::Cow;
         use std::cmp::{min};
         use std::collections::HashMap;
-        use std::ops::Deref;
-        use std::path::Path;
         use arboard::{Clipboard, ImageData};
         use eframe;
         use egui;
@@ -41,7 +39,6 @@
         use itertools::Itertools;
         use crate::enums::app_enums::{EditType, HotkeysFunctions, ImageToShow, KeysEnum, RectEdit, RequestState, SavedData, ScreenshotType};
         use crate::utils::utils::{retained_image_from_dynamic};
-        use serde::{Serialize, Deserialize};
 
 
         pub struct MyApp {
@@ -198,7 +195,6 @@
             pub fn set_edit_type(&mut self, edit_type: EditType){self.edit_type = Some(edit_type)}
 
             pub fn set_save_location(&mut self, location: String){self.saved_data.set_location(location)}
-            pub fn set_save_name(&mut self, name: String){self.saved_data.set_name(name)}
             pub fn set_setup(&mut self, value: bool){self.setup = value}
             pub fn set_saved_data(&mut self, data: SavedData){self.saved_data = data}
 

@@ -2,7 +2,6 @@
 use eframe::{egui, Storage};
 use egui::{Align, CursorIcon, Layout, Pos2};
 use itertools::Itertools;
-use serde::Serialize;
 use crate::app::app_utils::MyApp;
 use crate::draw::draw_utils::{draw_add_hotkey_combobox, draw_back_button, draw_back_menu_button, draw_combobox, draw_copy_button, draw_delete_button, draw_delete_function_button, draw_edit_button, draw_enable_hotkeys_shortcuts, draw_erase_button, draw_file_picker, draw_image, draw_monitor_button, draw_more_menu, draw_new_button, draw_ok_button, draw_ok_shortcut_button, draw_paint_button, draw_red_rect, draw_save_folder, draw_select_hotkey, draw_shortcut_selection, draw_text_button, draw_text_edit, ok_default_button};
 use crate::enums::app_enums::{RequestState, ScreenshotType};

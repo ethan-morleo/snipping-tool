@@ -2,10 +2,9 @@ pub mod utils{
     use std::cmp::{max, min, Ordering};
     use std::collections::HashMap;
     use egui::{ColorImage, CursorIcon, Modifiers, Pos2};
-    use egui::ImageData::Color;
     use egui_extras::RetainedImage;
-    use image::{ColorType, DynamicImage, Rgb, Rgba, RgbaImage};
-    use imageproc::drawing::{draw_filled_rect_mut, draw_line_segment_mut, draw_text_mut};
+    use image::{DynamicImage, Rgba};
+    use imageproc::drawing::{draw_filled_rect_mut};
     use imageproc::rect::Rect;
     use itertools::Itertools;
     use crate::enums::app_enums::{EditType, HotkeysFunctions, KeysEnum, RectEdit, RequestState};

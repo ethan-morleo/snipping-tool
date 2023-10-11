@@ -1,5 +1,4 @@
 pub(crate) mod draw_utils{
-    use std::ops::Deref;
     use std::path::Path;
     use arboard::{Clipboard};
     use eframe::emath::Vec2;
@@ -189,7 +188,7 @@ pub(crate) mod draw_utils{
     ///DRAW BACK BUTTON THAT CONTROL THE GO BACK FE FLOW
     pub fn draw_back_button(app: &mut MyApp, ui: &mut Ui, ctx: &egui::Context){
         ui.add_space(20.0);
-        let mut size = 0.0;
+        let mut size = f32::default();
         if !app.get_request_state().equal("EditImage"){
             size = 70.0;
         }else{

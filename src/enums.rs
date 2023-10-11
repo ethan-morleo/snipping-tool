@@ -1,5 +1,4 @@
 pub mod app_enums{
-    use std::collections::HashMap;
     use egui::Modifiers;
     use egui_extras::RetainedImage;
     use serde::{Deserialize, Serialize};
@@ -61,7 +60,6 @@ pub mod app_enums{
             match self {
                 HotkeysFunctions::NewFull => {"FULL SCREEN"}
                 HotkeysFunctions::NewCustom => {"CUSTOM SCREEN"}
-                _ => {panic!("Impossible to transform in string")}
             }
         }
         pub fn into_enum(string: & str) -> Self{
@@ -131,7 +129,6 @@ pub mod app_enums{
         pub fn get_name(&self) ->String{self.save_name.clone()}
         pub fn get_screenshot_numbers(&self) ->usize{self.screenshot_numbers}
         pub fn set_location(&mut self, location: String){self.save_location = Some(location)}
-        pub fn set_name(&mut self, name: String){self.save_location = Some(name)}
         pub fn set_screenshot_number(&mut self, value: usize){self.screenshot_numbers = value}
     }
 }
