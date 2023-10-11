@@ -2,10 +2,13 @@ pub mod utils{
     use std::cmp::{max, min, Ordering};
     use std::collections::HashMap;
     use egui::{ColorImage, CursorIcon, Modifiers, Pos2};
+    use egui::ImageData::Color;
     use egui_extras::RetainedImage;
-    use image::DynamicImage;
+    use image::{ColorType, DynamicImage, Rgb, Rgba, RgbaImage};
+    use imageproc::drawing::{draw_filled_rect_mut, draw_line_segment_mut, draw_text_mut};
+    use imageproc::rect::Rect;
     use itertools::Itertools;
-    use crate::enums::app_enums::{HotkeysFunctions, KeysEnum, RectEdit, RequestState};
+    use crate::enums::app_enums::{EditType, HotkeysFunctions, KeysEnum, RectEdit, RequestState};
     use crate::app::app_utils::MyApp;
     ///retained image from  dynamic image
     pub fn retained_image_from_dynamic(dyn_image:&DynamicImage) -> Option<RetainedImage> {
@@ -110,9 +113,20 @@ pub mod utils{
         sorted_vec
     }
 
+    pub fn compare_keys(keys1 : Vec<KeysEnum>, keys2: Vec<KeysEnum>) -> bool{
+        let sort_pressed_keys = sort_keys(keys1);
+        let sort_hotkeys = sort_keys(keys2);
+
+        return if sort_pressed_keys.iter().unique().collect::<Vec<_>>() == sort_hotkeys.iter().unique().collect::<Vec<_>>() {
+            true
+        } else {
+            false
+        }
+    }
+
     ///method to know all selectable hotkeys functions
     pub fn get_possible_hotkeys_functions(enable_functions: HashMap<Vec<KeysEnum>, String>) -> Vec<HotkeysFunctions>{
-        let mut all_functions = vec![HotkeysFunctions::NewFull, HotkeysFunctions::NewCustom, HotkeysFunctions::QuarterTopLeft, HotkeysFunctions::QuarterTopRight, HotkeysFunctions::QuarterDownLeft, HotkeysFunctions::QuarterDownRight];
+        let mut all_functions = vec![HotkeysFunctions::NewFull, HotkeysFunctions::NewCustom];
         all_functions.retain(
             |function| !enable_functions.values().map(|v| HotkeysFunctions::into_enum(v.as_str())).contains(function)
         );
@@ -162,4 +176,26 @@ pub mod utils{
             _ => {}
         }
     }
+
+    pub fn edit_utils(app: &mut MyApp){
+        let white = Rgba([0u8, 255u8, 0u8, 1u8]);
+        if let Some(edit_type) = app.get_edit_type(){
+            match edit_type {
+                EditType::Text => {
+                    //draw_text_mut(app.get_edit_image(), white, app.get_edit_position()[0].x as i32, app.get_edit_position()[0].y as i32, )
+                }
+                EditType::Painting => {
+                    let edit_positions = app.get_edit_position().clone();
+                    let height = (edit_positions[0].y - edit_positions[1].y).abs();
+                    if height>0.0{
+                        draw_filled_rect_mut(app.get_edit_image(), Rect::at(edit_positions[0].x as i32, edit_positions[0].y as i32).of_size(20, height as u32), white);
+                    }else{
+                        draw_filled_rect_mut(app.get_edit_image(), Rect::at(edit_positions[0].x as i32, edit_positions[0].y as i32).of_size(20, 1), white);
+                    }
+                    app.set_new_edit_image();
+                }
+            }
+        }
+    }
+
 }

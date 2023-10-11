@@ -1,11 +1,13 @@
 pub(crate) mod draw_utils{
+    use std::ops::Deref;
+    use std::path::Path;
     use arboard::{Clipboard};
     use eframe::emath::Vec2;
     use egui::{Color32, emath, Pos2, Rounding, Stroke, Ui};
     use native_dialog::FileDialog;
-    use crate::enums::app_enums::{HotkeysFunctions, RequestState, ScreenshotType};
+    use crate::enums::app_enums::{EditType, HotkeysFunctions, RequestState, ScreenshotType};
     use crate::app::app_utils::MyApp;
-    use crate::utils::utils::{get_possible_hotkeys_functions, keys_string, sort_key_modifier};
+    use crate::utils::utils::{get_possible_hotkeys_functions, keys_string, sort_key_modifier, sort_keys};
 
     ///DRAW NEW SCREENSHOT BUTTON
     pub fn draw_new_button( app: &mut MyApp, frame:&mut eframe::Frame, ui: &mut Ui, ctx: &egui::Context){
@@ -37,7 +39,7 @@ pub(crate) mod draw_utils{
             .show_ui(ui, |ui|{
                 for screen_type in [
                     ScreenshotType::FULL,
-                    ScreenshotType::RECT,
+                    ScreenshotType::CUSTOM,
                 ] {
                     ui.selectable_value(&mut app.screen_type, screen_type, format!("{:?}", screen_type));
                 }
@@ -57,6 +59,56 @@ pub(crate) mod draw_utils{
         }
     }
 
+    ///DRAW MONITOR CHOICE BUTTON
+    pub fn draw_monitor_button(app: &mut MyApp, ui: &mut Ui, ctx: &egui::Context, number: usize, frame: &mut eframe::Frame){
+        if ui.add(egui::Button::image_and_text(
+            app.get_icon(1).texture_id(ctx),
+            Vec2::new(30.0, 30.0),
+            format!("MONITOR {}", number.to_string())
+        )).clicked(){
+            app.set_screen_selected(number-1);
+            app.screen_request_init(frame);
+        }
+    }
+
+    ///DRAW EDIT BUTTON
+    pub fn draw_edit_button(app: &mut MyApp, ui: &mut Ui, ctx: &egui::Context){
+        ui.add_space(20.0);
+        //new button
+        if ui.add(egui::Button::image_and_text(
+            app.get_icon(9).texture_id(ctx),
+            Vec2::new(30.0, 30.0),
+            "EDIT"
+        )).clicked(){
+            app.set_first_edit_image();
+            app.set_request_state(RequestState::EditImage)
+        }
+    }
+    ///DRAW TEXT BUTTON
+    pub fn draw_text_button(app: &mut MyApp, ui: &mut Ui, ctx: &egui::Context){
+        ui.add_space(20.0);
+        //new button
+        if ui.add(egui::Button::image_and_text(
+            app.get_icon(11).texture_id(ctx),
+            Vec2::new(30.0, 30.0),
+            "TEXT"
+        )).clicked(){
+            app.set_edit_type(EditType::Text)
+        }
+    }
+    ///DRAW PAINTING BUTTON
+    pub fn draw_paint_button(app: &mut MyApp, ui: &mut Ui, ctx: &egui::Context){
+        ui.add_space(20.0);
+        //new button
+        if ui.add(egui::Button::image_and_text(
+            app.get_icon(10).texture_id(ctx),
+            Vec2::new(30.0, 30.0),
+            "PAINT"
+        )).clicked(){
+            app.set_edit_type(EditType::Painting);
+        }
+    }
+
     ///DRAW SAVE FILE PICKER BUTTON
     //TODO: prova a vedere egui-file che forse è meno oneroso di rfd
     pub fn draw_file_picker(app: &mut MyApp, ui: &mut Ui, ctx: &egui::Context){
@@ -66,12 +118,23 @@ pub(crate) mod draw_utils{
             Vec2::new(30.0, 30.0),
             "Save as..."
         )).clicked(){
+            //check if it's set default location and name
+            let mut default_name : String = String::new();
+            let mut location = String::new();
+            if app.get_saved_data().get_location().is_some(){
+                location = app.get_saved_data().get_location().unwrap();
+            };
+            if !app.get_saved_data().get_name().is_empty(){
+                default_name = format!("{} {}",app.get_saved_data().get_name(), app.get_saved_data().get_screenshot_numbers())
+            }
             let path = FileDialog::new()
                 .add_filter("PNG Image", &["png"])
                 .add_filter("JPEG image",&["jpg", "jpeg"] )
                 .add_filter("Gif image", &["gif"])
                 .add_filter("WebP image", &["webp"])
                 .add_filter("Tiff image", &["tiff"])
+                .set_filename(default_name.as_str())
+                .set_location(Path::new(location.as_str().clone()))
                 .show_save_single_file().unwrap();
             //save image
             if let Some(path) = path {
@@ -93,14 +156,19 @@ pub(crate) mod draw_utils{
     ///DRAW IMAGE ON UI DIFFERENTLY BASED ON USE CASE
     pub fn draw_image(app: &mut MyApp, frame: &mut eframe::Frame, ui:&mut Ui){
         if !app.is_erased(){
-            if app.get_screen_type()==ScreenshotType::FULL || app.is_rect_choosen(){
-                ui.vertical_centered(
-                    |ui|{
-                        app.ui_with_image(frame,ui);
-                    });
+            if !app.get_request_state().equal("EditImage"){
+                if app.get_screen_type()==ScreenshotType::FULL || app.is_rect_choosen(){
+                    ui.vertical_centered(
+                        |ui|{
+                            app.ui_with_image(frame,ui);
+                        });
+                }else{
+                    app.ui_with_image(frame, ui);
+                }
             }else{
-                app.ui_with_image(frame, ui);
+                app.show_image(ui);
             }
+
         }
     }
 
@@ -121,10 +189,16 @@ pub(crate) mod draw_utils{
     ///DRAW BACK BUTTON THAT CONTROL THE GO BACK FE FLOW
     pub fn draw_back_button(app: &mut MyApp, ui: &mut Ui, ctx: &egui::Context){
         ui.add_space(20.0);
+        let mut size = 0.0;
+        if !app.get_request_state().equal("EditImage"){
+            size = 70.0;
+        }else{
+            size = 30.0;
+        }
         if ui.add(
             egui::ImageButton::new(
                 app.get_icon(4).texture_id(ctx),
-                Vec2::new(70.0,70.0)
+                Vec2::new(size,size)
             )
         ).clicked(){
             if app.is_rect_shown(){
@@ -165,7 +239,36 @@ pub(crate) mod draw_utils{
                     ui.close_menu();
                 }
                 ui.separator();
+                if ui.button("save preferences...").clicked(){
+                    app.set_request_state(RequestState::SavePreferences);
+                    ui.close_menu();
+                }
             });
+    }
+
+    ///DRAW SAVE FOLDER LOCATION
+    pub fn draw_save_folder(app: &mut MyApp, ui: &mut Ui){
+        ui.horizontal(
+            |ui|{
+                ui.label("choose default folder location");
+                if ui.button("choose folder").clicked(){
+                    let location = FileDialog::new().show_open_single_dir().unwrap();
+                    if let Some(path) = location{
+                        app.set_save_location(path.to_str().unwrap().to_string())
+                    }
+                }
+            }
+        );
+    }
+
+    ///DRAW TEXT EDIT
+    pub fn draw_text_edit(app: &mut MyApp, ui: &mut Ui){
+        ui.horizontal(
+            |ui|{
+                ui.label("default saving name: ");
+                ui.add(egui::TextEdit::singleline(&mut app.saved_data.save_name).hint_text("write the default name"))
+            }
+        );
     }
 
     ///LISTA DI TUTTE LE SHORTCUT CHE HAI ATTIVATO
@@ -216,9 +319,21 @@ pub(crate) mod draw_utils{
     ///OK BUTTON IN SHORTCUT SELECTION
     pub fn draw_ok_shortcut_button(app: &mut MyApp, ui: &mut Ui){
         if ui.button("OK").clicked(){
-            app.set_hotkey_enable(app.get_hotkey_selected(), app.get_keys());
+            app.set_hotkey_enable(app.get_hotkey_selected(), sort_keys(app.get_keys()));
             app.clear_keys();
+            app.set_repeated_keys(false);
             app.set_request_state(RequestState::HotkeyWindow);
+        }
+    }
+
+    ///DRAW OK SAVE DEFAULT BUTTON
+    pub fn ok_default_button(app: &mut MyApp, ui: &mut Ui){
+        if ui.button("OK").clicked(){
+            if app.image_raw.is_some() || app.is_rect_choosen() {
+                app.set_request_state(RequestState::Processed)
+            }else{
+                app.set_request_state(RequestState::Initialized)
+            }
         }
     }
 
@@ -226,6 +341,7 @@ pub(crate) mod draw_utils{
     pub fn draw_delete_button(app: &mut MyApp, ui: &mut Ui){
         if ui.button("RESET").clicked(){
             app.clear_keys();
+            app.set_repeated_keys(false);
         }
     }
 

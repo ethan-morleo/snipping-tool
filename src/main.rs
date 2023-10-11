@@ -1,11 +1,15 @@
 
-use eframe::egui;
-use egui::{Align, CursorIcon, Layout};
+use eframe::{egui, Storage};
+use egui::{Align, CursorIcon, Layout, Pos2};
 use itertools::Itertools;
-use crate::draw::draw_utils::{draw_add_hotkey_combobox, draw_back_button, draw_back_menu_button, draw_combobox, draw_copy_button, draw_delete_button, draw_delete_function_button, draw_enable_hotkeys_shortcuts, draw_erase_button, draw_file_picker, draw_image, draw_more_menu, draw_new_button, draw_ok_button, draw_ok_shortcut_button, draw_red_rect, draw_select_hotkey, draw_shortcut_selection};
+use serde::Serialize;
+use crate::app::app_utils::MyApp;
+use crate::draw::draw_utils::{draw_add_hotkey_combobox, draw_back_button, draw_back_menu_button, draw_combobox, draw_copy_button, draw_delete_button, draw_delete_function_button, draw_edit_button, draw_enable_hotkeys_shortcuts, draw_erase_button, draw_file_picker, draw_image, draw_monitor_button, draw_more_menu, draw_new_button, draw_ok_button, draw_ok_shortcut_button, draw_paint_button, draw_red_rect, draw_save_folder, draw_select_hotkey, draw_shortcut_selection, draw_text_button, draw_text_edit, ok_default_button};
 use crate::enums::app_enums::{RequestState, ScreenshotType};
 use crate::input::input::{control_keyboard, control_mouse_input};
-use crate::utils::utils::set_cursor;
+use crate::utils::utils::{set_cursor};
+
+
 
 mod app;
 mod draw;
@@ -13,7 +17,8 @@ mod enums;
 mod input;
 mod utils;
 
-fn main() -> Result<(), eframe::Error> {
+
+ fn  main() -> Result<(), eframe::Error> {
     let options = eframe::NativeOptions {
         initial_window_size: Some(egui::vec2(300.0, 300.0)),
         ..Default::default()
@@ -26,8 +31,15 @@ fn main() -> Result<(), eframe::Error> {
 }
 
 
-impl eframe::App for app::app_utils::MyApp {
+impl eframe::App for MyApp {
+
     fn update(&mut self, ctx: &egui::Context, frame: &mut eframe::Frame) {
+        //setup the app in the first update in case of restore of user preferences
+        if !self.is_setup(){
+            self.setup();
+            self.set_setup(true);
+        }
+
         let clipboard = &mut arboard::Clipboard::new().unwrap();
         frame.set_decorations(true);
         ctx.set_pixels_per_point(1.0);
@@ -36,11 +48,9 @@ impl eframe::App for app::app_utils::MyApp {
         if self.get_request_state().equal("INCOMPLETE"){
            self.process_incomplete_request();
         }
+
         egui::CentralPanel::default().show(ctx, |ui| {
-
             control_keyboard(self,ctx, frame, clipboard);
-
-
             //--------------------------------------------------------------------------------------
             //UI FOR THE APP IN INITIALIZED
             if self.get_request_state().equal("INITIALIZED"){
@@ -57,13 +67,20 @@ impl eframe::App for app::app_utils::MyApp {
                 ui.separator();
             }
             //--------------------------------------------------------------------------------------
+            //UI FOR CHOOSING THE RIGHT MONITOR
+            if self.get_request_state().equal("ChoiceMonitor"){
+                for i in 1..self.get_display_number()+1{
+                    ui.add_space(30.0);
+                    draw_monitor_button(self,ui,ctx,i, frame);
+                }
+            }
+            //--------------------------------------------------------------------------------------
             //UI FOR CHOOSING SCREENSHOT CUSTOM AREA
             if self.get_request_state().equal("ChoiceRect"){
                 ui.horizontal(
                     |ui|{
                         draw_image(self, frame,ui);
                         control_mouse_input(self, ctx);
-
                         ui.add_space(15.0);
                         ui.vertical(
                           |ui|{
@@ -84,10 +101,13 @@ impl eframe::App for app::app_utils::MyApp {
             //--------------------------------------------------------------------------------------
             //UI IN TERMINAL STATE
             if self.get_request_state().equal("PROCESSED"){
+                set_cursor(self, ctx);
                 ui.horizontal(
                     |ui|{
                         draw_new_button(self,frame,ui,ctx);
                         draw_erase_button(self,ui,ctx);
+                        draw_edit_button(self,ui,ctx);
+
                         ui.with_layout(
                             Layout::right_to_left(Align::Center),
                             |ui|{
@@ -98,12 +118,30 @@ impl eframe::App for app::app_utils::MyApp {
                         );
                     });
                 ui.separator();
-                if self.get_screen_type()==ScreenshotType::RECT {ui.add_space(20.0);}
+                if self.get_screen_type()==ScreenshotType::CUSTOM {ui.add_space(20.0);}
                 draw_image(self, frame,ui);
             }
             //--------------------------------------------------------------------------------------
+            //EDIT IMAGE UI
+            if self.get_request_state().equal("EditImage"){
+                if self.get_edit_type().is_some() {
+                    if (self.get_edit_type().unwrap().equal("Text") && self.get_edit_position() == [Pos2::new(0.0, 0.0), Pos2::new(0.0, 0.0)]) || self.get_edit_type().unwrap().equal("Painting") {
+                        control_mouse_input(self,ctx);
+                    }
+                }
+                ui.horizontal(
+                    |ui|{
+                        draw_text_button(self,ui,ctx);
+                        draw_paint_button(self,ui,ctx);
+                        draw_back_button(self,ui,ctx);
+                    }
+                );
+                ui.separator();
+                ui.add_space(10.0);
+                draw_image(self,frame,ui);
+            }
+            //--------------------------------------------------------------------------------------
             //HOTKEYS UI
-
             //HOTKEY VIEW WINDOW
             if self.get_request_state().equal("HotkeyWindow") ||self.get_request_state().equal("HotkeysSelection") || self.get_request_state().equal("HotkeysAdd"){
                     //UI FOR HOTKEYS EDIT WINDOW
@@ -138,6 +176,9 @@ impl eframe::App for app::app_utils::MyApp {
                         draw_shortcut_selection(self,ui);
                         ui.add_space(30.0);
                         if !self.get_keys().is_empty() {
+                            if self.is_repeated_keys(){
+                                ui.label("ALREADY EXISTING HOTKEYS, IF PRESS OK WOULD BE OVERWRITING");
+                            }
                             ui.horizontal(
                                 |ui| {
                                     draw_ok_shortcut_button(self, ui);
@@ -158,6 +199,21 @@ impl eframe::App for app::app_utils::MyApp {
                         );
                     }
             }
+            //--------------------------------------------------------------------------------------
+            //UI FOR SAVING PREFERENCES
+            if self.get_request_state().equal("SavePreferences"){
+                draw_save_folder(self, ui);
+                ui.add_space(30.0);
+                draw_text_edit(self, ui);
+                ui.add_space(50.0);
+                ok_default_button(self, ui);
+            }
         });
     }
+
+    fn save(&mut self, _storage: &mut dyn Storage) {
+        let data_to_save = self.get_saved_data();
+        confy::store("rust-snipping-tool", None, data_to_save).unwrap()
+    }
+
 }

@@ -3,16 +3,41 @@ pub(crate) mod input{
     use arboard::Clipboard;
     use egui::Event::Key;
     use egui::Pos2;
-    use itertools::Itertools;
     use crate::enums::app_enums::{HotkeysFunctions, KeysEnum, RectEdit};
     use crate::app::app_utils::MyApp;
-    use crate::utils::utils::{change_rect, find_modifier, set_keys_or_press_keys, sort_keys};
+    use crate::utils::utils::{change_rect, compare_keys, edit_utils, find_modifier, set_keys_or_press_keys};
 
     ///method to control mouse
     pub fn control_mouse_input(app: &mut MyApp, ctx: & egui::Context){
         ctx.input(
             |i|{
-
+                if app.get_request_state().equal("EditImage"){
+                    if app.get_edit_type().is_some(){
+                        if app.get_edit_type().unwrap().equal("Text"){
+                            if i.pointer.primary_pressed(){
+                                let origin = i.pointer.press_origin().unwrap();
+                                app.set_edit_coords_position(1,origin);
+                            }
+                        }else{
+                            if i.pointer.primary_pressed(){
+                                let origin = i.pointer.press_origin().unwrap();
+                                app.set_edit_coords_position(1,origin);
+                                app.set_edit_coords_position(2,origin);
+                            }
+                            if i.pointer.is_decidedly_dragging(){
+                                if i.pointer.primary_down(){
+                                    let pos= i.pointer.interact_pos().unwrap();
+                                    app.set_edit_coords_position(1, app.get_edit_position()[1]);
+                                    app.set_edit_coords_position(2, pos);
+                                    edit_utils(app);
+                                }else{
+                                    app.set_edit_coords_position(1,Pos2::new(0.0,0.0));
+                                    app.set_edit_coords_position(2,Pos2::new(0.0,0.0));
+                                }
+                            }
+                        }
+                    }
+                }
                 if !(i.pointer.hover_pos().is_some() && i.pointer.hover_pos().unwrap().x>((app.get_full_image().width() as f32*0.92) + 12.0)){
                     app.set_outside_rect(false);
                     if !app.is_rect_shown(){
@@ -103,7 +128,7 @@ pub(crate) mod input{
                     app.copy_in_clipboard(clipboard);
                 }
 
-                //LISTEN SHORTCUTS
+                //LISTEN HOTKEYS SHORTCUTS
                 i.events.iter().for_each(
                     |event|{
                         match event {
@@ -113,20 +138,27 @@ pub(crate) mod input{
                                     if let Some(modifier) = find_modifier(modifiers){
                                         modifier.iter().for_each(|modifier| set_keys_or_press_keys(app,app.get_request_state(),KeysEnum::Modifier(*modifier)));
                                     }
-                                    set_keys_or_press_keys(app,app.get_request_state(),KeysEnum::Key(*key))
+                                    //set pressed key
+                                    set_keys_or_press_keys(app,app.get_request_state(),KeysEnum::Key(*key));
                                 } else if !*pressed && !app.get_request_state().equal("HotkeysSelection") {
                                     //cerco corrispondenza nella mappa se non è vuota
                                     if !app.get_hotkey_enable().is_empty() {
                                         for (k, v) in app.get_hotkey_enable() {
-                                            let sort_pressed_keys = sort_keys(app.get_press_keys());
-                                            let sort_hotkeys = sort_keys(k.clone());
-
-                                            if sort_pressed_keys.iter().unique().collect::<Vec<_>>() == sort_hotkeys.iter().unique().collect::<Vec<_>>() {
-                                                app.do_hotkey_function(HotkeysFunctions::into_enum(v.as_str()), frame);
-                                            }
+                                           if compare_keys(app.get_press_keys(), k.clone()){
+                                               app.do_hotkey_function(HotkeysFunctions::into_enum(v.as_str()), frame);
+                                           }
                                         }
                                     }
                                     app.clear_press_keys();
+                                }else if !*pressed && app.get_request_state().equal("HotkeysSelection"){
+                                    //check that the vector of keys just pressed is unique
+                                    if !app.get_hotkey_enable().is_empty(){
+                                        for k in app.get_hotkey_enable().keys(){
+                                            if compare_keys(app.get_keys(), k.clone()){
+                                                app.set_repeated_keys(true);
+                                            }
+                                        }
+                                    }
                                 }
                             }
                             _ => {}

@@ -1,24 +1,26 @@
 pub mod app_enums{
+    use std::collections::HashMap;
     use egui::Modifiers;
     use egui_extras::RetainedImage;
+    use serde::{Deserialize, Serialize};
 
     ///enum for all screenshot type
     #[derive(Debug, PartialEq, Copy, Clone)]
     pub enum ScreenshotType{
         FULL,
-        RECT
+        CUSTOM
     }
     impl ScreenshotType{
         pub fn equal(self, state:&str) -> bool {
             match state{
                 "FULL" =>{self ==ScreenshotType::FULL},
-                "RECT" =>{self ==ScreenshotType::RECT},
+                "CUSTOM" =>{self ==ScreenshotType::CUSTOM },
                 _ => {panic!("INVALID TYPE IN INPUT")}
             }
         }
     }
     ///enum for all request state
-    #[derive(Debug, PartialEq, Copy, Clone)]
+    #[derive(Debug, PartialEq, Copy, Clone, Serialize, Deserialize)]
     pub enum RequestState{
         Initialized, //non ho premuto il tasto +
         Incomplete, //caso in cui ho premuto il tasto + e devo fare lo screen
@@ -27,7 +29,9 @@ pub mod app_enums{
         Processed, //ho terminato la richiesta
         HotkeyWindow,
         HotkeysAdd,
-        HotkeysSelection //scelgo le hotkeys
+        HotkeysSelection, //scelgo le hotkeys
+        EditImage,  //edit immagine
+        SavePreferences
     }
     impl RequestState{
         pub fn equal(self, state:&str) -> bool {
@@ -39,6 +43,8 @@ pub mod app_enums{
                 "HotkeyWindow" =>{self == RequestState::HotkeyWindow },
                 "HotkeysAdd" =>{self == RequestState::HotkeysAdd },
                 "HotkeysSelection" =>{self == RequestState::HotkeysSelection },
+                "EditImage" =>{self == RequestState::EditImage},
+                "SavePreferences" =>{self == RequestState::SavePreferences}
                 "PROCESSED" =>{self == RequestState::Processed },
                 _ => {panic!("INVALID STATE IN INPUT")}
             }
@@ -48,70 +54,84 @@ pub mod app_enums{
     #[derive(Debug, PartialEq, Copy, Clone)]
     pub enum HotkeysFunctions{
         NewFull,
-        NewCustom,
-        QuarterTopRight,
-        QuarterTopLeft,
-        QuarterDownRight,
-        QuarterDownLeft
+        NewCustom
     }
     impl HotkeysFunctions{
-        // TODO:
-        /* pub fn equal(self, state:&str) -> bool {
-            match state{
-                "NewFull" =>{self ==HotkeysFunctions::NewFull},
-                "NewCustom" =>{self ==HotkeysFunctions::NewCustom},
-                "QuarterTopRight" =>{self == HotkeysFunctions::QuarterTopRight},
-                "QuarterTopLeft" =>{self == HotkeysFunctions::QuarterTopLeft},
-                "QuarterDownLeft" =>{self == HotkeysFunctions::QuarterDownLeft},
-                "QuarterDownRight" =>{self == HotkeysFunctions::QuarterDownRight}
-                _ => {panic!("INVALID Hotkeys functions IN INPUT")}
-            }
-        } */
         pub fn to_string(self) -> &'static str {
             match self {
                 HotkeysFunctions::NewFull => {"FULL SCREEN"}
                 HotkeysFunctions::NewCustom => {"CUSTOM SCREEN"}
-                HotkeysFunctions::QuarterTopRight => {"1/4 TOP L"}
-                HotkeysFunctions::QuarterTopLeft => {"1/4 TOP R"}
-                HotkeysFunctions::QuarterDownRight => {"1/4 DOWN R"}
-                HotkeysFunctions::QuarterDownLeft => {"1/4 DOWN L"}
+                _ => {panic!("Impossible to transform in string")}
             }
         }
         pub fn into_enum(string: & str) -> Self{
             match string {
                 "FULL SCREEN" =>{HotkeysFunctions::NewFull},
                 "CUSTOM SCREEN" =>{HotkeysFunctions::NewCustom},
-                "1/4 TOP R" =>{HotkeysFunctions::QuarterTopRight},
-                "1/4 TOP L" =>{HotkeysFunctions::QuarterTopLeft},
-                "1/4 DOWN R" =>{HotkeysFunctions::QuarterDownRight},
-                "1/4 DOWN L" =>{HotkeysFunctions::QuarterDownLeft},
                 _ => {panic!("INVALID Hotkeys functions IN INPUT")}
             }
         }
     }
+
     pub struct ImageToShow{
         pub(crate) full_ret_image: Option<RetainedImage>,
-        pub(crate) custom_ret_image: Option<RetainedImage>
+        pub(crate) custom_ret_image: Option<RetainedImage>,
+        pub(crate) edit: Option<RetainedImage>
     }
     impl Default for ImageToShow{
         fn default() -> Self {
             Self{
                 full_ret_image: None,
-                custom_ret_image: None
+                custom_ret_image: None,
+                edit: None
             }
         }
     }
-    #[derive(Debug, PartialEq, Copy, Clone, Eq, Hash)]
+    #[derive(Debug, PartialEq, Copy, Clone, Eq, Hash, Serialize, Deserialize)]
     pub enum KeysEnum{
         Key(egui::Key),
         Modifier(Modifiers)
     }
 
-    #[derive(Debug, PartialEq, Copy, Clone, Eq)]
+    #[derive(Debug, PartialEq, Copy, Clone, Eq, Serialize, Deserialize)]
     pub enum RectEdit{
         HorizontalLeft,
         HorizontalRight,
         VerticalTop,
         VerticalDown
+    }
+
+    #[derive(Debug, PartialEq, Copy, Clone, Eq, Serialize, Deserialize)]
+    pub enum EditType{
+        Text,
+        Painting,
+    }
+    impl EditType{
+        pub fn equal(self, edit_type:&str) -> bool {
+            match edit_type{
+                "Text" =>{self == EditType::Text},
+                "Painting" =>{self == EditType::Painting},
+                _ => {panic!("INVALID EDIT TYPE IN INPUT")}
+            }
+        }
+    }
+    #[derive(Debug, PartialEq, Clone, Eq, Serialize, Deserialize)]
+    pub struct SavedData{
+        save_location: Option<String>,
+        pub(crate)save_name: String,
+        screenshot_numbers: usize,
+    }
+    impl Default for SavedData{
+        fn default() -> Self {
+            SavedData{save_location:None, save_name:"".into(), screenshot_numbers:0}
+        }
+    }
+    impl SavedData{
+        pub fn get_location(&self) ->Option<String>{self.save_location.clone()}
+        pub fn get_name(&self) ->String{self.save_name.clone()}
+        pub fn get_screenshot_numbers(&self) ->usize{self.screenshot_numbers}
+        pub fn set_location(&mut self, location: String){self.save_location = Some(location)}
+        pub fn set_name(&mut self, name: String){self.save_location = Some(name)}
+        pub fn set_screenshot_number(&mut self, value: usize){self.screenshot_numbers = value}
     }
 }
