@@ -7,7 +7,7 @@ edition = "2021"
 
 [dependencies]
 eframe = { version="0.22.0", features = ["persistence"]}
-egui = { version="0.22.0", features = ["persistence"]}
+egui = { version="0.22.0", features = ["persistence", "serde"]}
 egui_extras = {version="0.22.0", features = ["image"]}
 image = { version = "0.24", default-features = false, features = ["png", "jpeg", "gif", "webp-encoder", "tiff"] }
 screenshots = "0.7.1"

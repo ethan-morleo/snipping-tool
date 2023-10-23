@@ -4,9 +4,11 @@ pub(crate) mod draw_utils{
     use eframe::emath::Vec2;
     use egui::{Color32, emath, Pos2, Rounding, Stroke, Ui};
     use native_dialog::FileDialog;
+    use std::string::String;
     use crate::enums::app_enums::{EditType, HotkeysFunctions, RequestState, ScreenshotType};
     use crate::app::app_utils::MyApp;
-    use crate::utils::utils::{get_possible_hotkeys_functions, keys_string, sort_key_modifier, sort_keys};
+    use crate::app::screen_utils::get_screen;
+    use crate::utils::utils::{get_possible_hotkeys_functions, keys_string};
 
     ///DRAW NEW SCREENSHOT BUTTON
     pub fn draw_new_button( app: &mut MyApp, frame:&mut eframe::Frame, ui: &mut Ui, ctx: &egui::Context){
@@ -34,6 +36,7 @@ pub(crate) mod draw_utils{
     pub fn draw_combobox(app: &mut MyApp, ui: &mut Ui){
         ui.add_space(20.0);
         egui::ComboBox::new("mode", "")
+            .width(80.0)
             .selected_text(format!("{:?}", app.get_screen_type()))
             .show_ui(ui, |ui|{
                 for screen_type in [
@@ -72,16 +75,31 @@ pub(crate) mod draw_utils{
 
     ///DRAW EDIT BUTTON
     pub fn draw_edit_button(app: &mut MyApp, ui: &mut Ui, ctx: &egui::Context){
-        ui.add_space(20.0);
         //new button
         if ui.add(egui::Button::image_and_text(
             app.get_icon(9).texture_id(ctx),
             Vec2::new(30.0, 30.0),
             "EDIT"
         )).clicked(){
-            app.set_first_edit_image();
             app.set_request_state(RequestState::EditImage)
         }
+    }
+    ///DRAW DELAY COMBOBOX
+    pub fn draw_delay_combobox(app: &mut MyApp, ui: &mut Ui){
+        ui.add_space(5.0);
+        egui::ComboBox::new("delay", "")
+            .width(40.0)
+            .selected_text(format!("{:?}", app.get_delay()))
+            .show_ui(ui, |ui|{
+                for delay_type in [
+                    0,
+                    2,
+                    4,
+                    5
+                ] {
+                    ui.selectable_value(&mut app.delay, delay_type, format!("{:?}", delay_type));
+                }
+            });
     }
     ///DRAW TEXT BUTTON
     pub fn draw_text_button(app: &mut MyApp, ui: &mut Ui, ctx: &egui::Context){
@@ -92,26 +110,73 @@ pub(crate) mod draw_utils{
             Vec2::new(30.0, 30.0),
             "TEXT"
         )).clicked(){
-            app.set_edit_type(EditType::Text)
         }
     }
-    ///DRAW PAINTING BUTTON
-    pub fn draw_paint_button(app: &mut MyApp, ui: &mut Ui, ctx: &egui::Context){
-        ui.add_space(20.0);
-        //new button
-        if ui.add(egui::Button::image_and_text(
-            app.get_icon(10).texture_id(ctx),
-            Vec2::new(30.0, 30.0),
-            "PAINT"
-        )).clicked(){
-            app.set_edit_type(EditType::Painting);
-        }
+    ///DRAW PAINTING COMBOBOX
+    pub fn draw_painting_combobox(app: &mut MyApp, ui: &mut Ui){
+        let selected_edit = match app.get_editing(){
+            None => {String::from("PAINTING")}
+            Some(edit) => {
+                let edit_string = edit.to_string().clone();
+                if edit_string.eq("Text"){
+                    String::from("PAINTING")
+                }else{
+                    edit_string
+                }
+            }
+        };
+        egui::ComboBox::new(
+            "painting", "", )
+            .selected_text(selected_edit)
+            .show_ui(ui, |ui|{
+                for edit_type in [
+                    "🖊 Free",
+                    "◯ Circle",
+                    "□ Square",
+                    "← Arrow"
+                ] {
+                    ui.selectable_value(&mut app.editing, Some(EditType::from_string(edit_type)), format!("{:?}", edit_type.to_string()));
+                }
+            });
     }
 
+    ///DRAW RECT PAINTING EDIT
+    pub fn draw_rect(app: &mut MyApp, ui: &mut Ui){
+        for rect_points in app.get_rect_paint_position(){
+            let points = vec![rect_points[0], rect_points[1]];
+            ui.painter().rect_stroke(
+                emath::Rect::from_points(&*points),
+                Rounding::none(),
+                Stroke::new(1.5,Color32::BLUE)
+            );
+        }
+    }
+    ///DRAW ARROW PAINTING EDIT
+    pub fn draw_arrow(app: &mut MyApp, ui: &mut Ui){
+        for arrow_points in app.get_arrow_paint_position(){
+            let vec2 = Vec2::new((arrow_points[0].x - arrow_points[1].x) as f32, (arrow_points[0].y - arrow_points[1].y) as f32);
+            ui.painter().arrow(
+                arrow_points[0],
+                vec2,
+                Stroke::new(1.5, Color32::BLUE)
+            )
+        }
+    }
+    ///DRAW CIRCLE PAINTING EDIT
+    pub fn draw_cirlce(app: &mut MyApp, ui: &mut Ui){
+        for circle_points in app.get_circle_paint_position(){
+            let radius = f32::sqrt(((circle_points[0].x - circle_points[1].x).powi(2)) + (circle_points[0].y - circle_points[1].y).powi(2));
+            ui.painter().circle_stroke(
+                circle_points[0],
+                        radius,
+                Stroke::new(1.5, Color32::BLUE)
+            );
+        }
+    }
     ///DRAW SAVE FILE PICKER BUTTON
     //TODO: prova a vedere egui-file che forse è meno oneroso di rfd
     pub fn draw_file_picker(app: &mut MyApp, ui: &mut Ui, ctx: &egui::Context){
-        ui.add_space(40.0);
+        ui.add_space(10.0);
         if ui.add(egui::Button::image_and_text(
             app.get_icon(5).texture_id(ctx),
             Vec2::new(30.0, 30.0),
@@ -120,11 +185,11 @@ pub(crate) mod draw_utils{
             //check if it's set default location and name
             let mut default_name : String = String::new();
             let mut location = String::new();
-            if app.get_saved_data().get_location().is_some(){
-                location = app.get_saved_data().get_location().unwrap();
+            if app.get_default().get_location().is_some(){
+                location = app.get_default().get_location().unwrap();
             };
-            if !app.get_saved_data().get_name().is_empty(){
-                default_name = format!("{} {}",app.get_saved_data().get_name(), app.get_saved_data().get_screenshot_numbers())
+            if !app.get_default().get_name().is_empty(){
+                default_name = format!("{} {}", app.get_default().get_name(), app.get_default().get_screenshot_numbers())
             }
             let path = FileDialog::new()
                 .add_filter("PNG Image", &["png"])
@@ -142,11 +207,20 @@ pub(crate) mod draw_utils{
         }
     }
 
+    ///DRAW ALL PAINTINGS
+    pub fn draw_all_paintings(app: &mut MyApp, ui: &mut Ui){
+        draw_line(app, ui);
+        draw_rect(app, ui);
+        draw_cirlce(app, ui);
+        draw_arrow(app, ui);
+    }
+
     ///DRAW COPY BUTTON
     pub fn draw_copy_button(app: &mut MyApp, ui: &mut Ui, ctx: &egui::Context, clipboard: &mut Clipboard){
-        if ui.add(egui::ImageButton::new(
+        if ui.add(egui::Button::image_and_text(
             app.get_icon(6).texture_id(ctx),
-            Vec2::new(30.0, 30.0)
+            Vec2::new(25.0, 25.0),
+            "COPY"
         )).clicked(){
             app.copy_in_clipboard(clipboard);
         };
@@ -155,24 +229,19 @@ pub(crate) mod draw_utils{
     ///DRAW IMAGE ON UI DIFFERENTLY BASED ON USE CASE
     pub fn draw_image(app: &mut MyApp, frame: &mut eframe::Frame, ui:&mut Ui){
         if !app.is_erased(){
-            if !app.get_request_state().equal("EditImage"){
-                if app.get_screen_type()==ScreenshotType::FULL || app.is_rect_choosen(){
-                    ui.vertical_centered(
-                        |ui|{
-                            app.ui_with_image(frame,ui);
-                        });
-                }else{
-                    app.ui_with_image(frame, ui);
-                }
+            if (app.get_screen_type()==ScreenshotType::FULL || app.is_rect_choosen()){
+                ui.vertical_centered(
+                    |ui|{
+                        app.ui_with_image(frame,ui);
+                    });
             }else{
-                app.show_image(ui);
+                app.ui_with_image(frame, ui);
             }
-
         }
     }
 
     /// OK BUTTON TO CONFIRM RECT SELECTION
-    pub fn draw_ok_button(app: &mut MyApp, ui: &mut Ui, ctx: &egui::Context){
+    pub fn draw_ok_button(app: &mut MyApp,ui: &mut Ui, ctx: &egui::Context, frame: &mut eframe::Frame){
         ui.add_space(30.0);
         if ui.add(egui::ImageButton::new(
             app.get_icon(3).texture_id(ctx),
@@ -181,6 +250,10 @@ pub(crate) mod draw_utils{
             if app.is_rect_shown(){
                 app.replace_image_with_rect();
                 app.set_rect_choosen(true);
+                let screen = get_screen(app.get_screen_selected());
+                let window_size = frame.info().window_info.size;
+
+                frame.set_window_pos(Pos2::new(((screen.display_info.width / 2) - (window_size.x/2.0) as u32) as f32, ((screen.display_info.height / 2) - (window_size.y/2.0) as u32) as f32));
                 app.set_request_state(RequestState::Processed); //transition to final state
             }
         }
@@ -188,12 +261,7 @@ pub(crate) mod draw_utils{
     ///DRAW BACK BUTTON THAT CONTROL THE GO BACK FE FLOW
     pub fn draw_back_button(app: &mut MyApp, ui: &mut Ui, ctx: &egui::Context){
         ui.add_space(20.0);
-        let mut size = f32::default();
-        if !app.get_request_state().equal("EditImage"){
-            size = 70.0;
-        }else{
-            size = 30.0;
-        }
+        let mut size = 70.0;
         if ui.add(
             egui::ImageButton::new(
                 app.get_icon(4).texture_id(ctx),
@@ -221,6 +289,21 @@ pub(crate) mod draw_utils{
             Color32::from_rgba_unmultiplied(220, 220, 220, 9 as u8),
             Stroke::new(1.5,Color32::RED)
         );
+    }
+
+    pub fn draw_line(app: &MyApp, ui: &mut Ui){
+        if !app.get_painting_position().is_empty(){
+            let lines = app.get_painting_position().clone();
+            let shapes = lines
+                .iter()
+                .filter(|line| line.len() >= 2)
+                .map(|line| {
+                    let points: Vec<Pos2> = line.clone();
+                    egui::Shape::line(points,
+                    Stroke::new(2.0, Color32::BLUE))
+                });
+            ui.painter().extend(shapes)
+        }
     }
 
     ///DRAW MORE OPTION MENU
@@ -265,7 +348,7 @@ pub(crate) mod draw_utils{
         ui.horizontal(
             |ui|{
                 ui.label("default saving name: ");
-                ui.add(egui::TextEdit::singleline(&mut app.saved_data.save_name).hint_text("write the default name"))
+                ui.add(egui::TextEdit::singleline(&mut app.saved_default.save_name).hint_text("write the default name"))
             }
         );
     }
@@ -273,11 +356,11 @@ pub(crate) mod draw_utils{
     ///LISTA DI TUTTE LE SHORTCUT CHE HAI ATTIVATO
     pub fn draw_enable_hotkeys_shortcuts(app: &mut MyApp, ui: &mut Ui){
         if !app.get_hotkey_enable().is_empty(){
-            ui.label("LE TUE SHORTCUTS PREMI PER MODIFICARLE :");
+
+            ui.label("LE TUE SHORTCUTS PREMI PER MODIFICARLE");
             ui.separator();
             ui.add_space(15.0);
-                for (mut k,v) in app.get_hotkey_enable(){
-                    k.sort_by(sort_key_modifier);
+                for (k,v) in app.get_hotkey_enable(){
                     let keys = keys_string(k);
                     if app.get_request_state().equal("HotkeysAdd"){
                         ui.add_enabled(false, egui::Button::new(format!("{function}: {keys}", function = v, keys = keys )));
@@ -318,8 +401,8 @@ pub(crate) mod draw_utils{
     ///OK BUTTON IN SHORTCUT SELECTION
     pub fn draw_ok_shortcut_button(app: &mut MyApp, ui: &mut Ui){
         if ui.button("OK").clicked(){
-            app.set_hotkey_enable(app.get_hotkey_selected(), sort_keys(app.get_keys()));
-            app.clear_keys();
+            app.set_hotkey_enable(app.get_hotkey_selected(), app.get_press_keys());
+            app.clear_press_keys();
             app.set_repeated_keys(false);
             app.set_request_state(RequestState::HotkeyWindow);
         }
@@ -339,7 +422,7 @@ pub(crate) mod draw_utils{
     ///DROP SHORTCUT IF WRONG
     pub fn draw_delete_button(app: &mut MyApp, ui: &mut Ui){
         if ui.button("RESET").clicked(){
-            app.clear_keys();
+            app.clear_press_keys();
             app.set_repeated_keys(false);
         }
     }
@@ -347,7 +430,7 @@ pub(crate) mod draw_utils{
     ///DISABLE HOTKEY FUNCTIONS
     pub fn draw_delete_function_button(app: &mut MyApp, ui: &mut Ui){
         if ui.button("DELETE SHORTCUT").clicked(){
-            app.clear_keys();
+            app.clear_press_keys();
             app.remove_from_map_by_value(app.get_hotkey_selected());
             app.set_request_state(RequestState::HotkeyWindow);
         }
@@ -359,10 +442,13 @@ pub(crate) mod draw_utils{
             if app.get_request_state().equal("HotkeyWindow"){
                 app.set_request_state(RequestState::Initialized);
             }else if app.get_request_state().equal("HotkeysSelection"){
-                app.clear_keys();
+                app.clear_press_keys();
                 app.set_request_state(RequestState::HotkeyWindow);
             }else if app.get_request_state().equal("HotkeysAdd"){
                 app.set_request_state(RequestState::HotkeyWindow);
+            }else if app.get_request_state().equal("EditImage"){
+                app.erase_drawing();
+                app.set_request_state(RequestState::Processed);
             }
 
         }
@@ -370,7 +456,7 @@ pub(crate) mod draw_utils{
 
     ///SCELTA DELLA SHORTCUT
     pub fn draw_shortcut_selection(app: &mut MyApp, ui: &mut Ui){
-    let keys = keys_string(app.get_keys());
+    let keys = keys_string(app.get_press_keys());
 
         ui.vertical_centered(|ui| {
             ui.label(format!("PREMI I TASTI PER LA SHORTCUT: {function}", function = app.get_hotkey_selected().to_string()));

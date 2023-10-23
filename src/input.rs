@@ -2,39 +2,43 @@ pub(crate) mod input{
     use std::cmp::{max, min};
     use arboard::Clipboard;
     use egui::Event::Key;
-    use egui::Pos2;
-    use crate::enums::app_enums::{HotkeysFunctions, KeysEnum, RectEdit};
+    use egui::{Color32, Painter, Pos2, Rect, Response, Shape, Stroke};
+    use egui::emath::RectTransform;
+    use crate::enums::app_enums::{EditType, HotkeysFunctions, KeysEnum, RectEdit};
     use crate::app::app_utils::MyApp;
-    use crate::utils::utils::{change_rect, compare_keys, edit_utils, find_modifier, set_keys_or_press_keys};
+    use crate::utils::utils::{change_rect, compare_keys, find_modifier};
+
 
     ///method to control mouse
     pub fn control_mouse_input(app: &mut MyApp, ctx: & egui::Context){
         ctx.input(
             |i|{
+                //add position to draw
                 if app.get_request_state().equal("EditImage"){
-                    if app.get_edit_type().is_some(){
-                        if app.get_edit_type().unwrap().equal("Text"){
-                            if i.pointer.primary_pressed(){
-                                let origin = i.pointer.press_origin().unwrap();
-                                app.set_edit_coords_position(1,origin);
+                    if i.pointer.primary_pressed(){
+                        if let Some(editing) = app.get_editing().clone(){
+                            let position = i.pointer.press_origin().unwrap().clone();
+                            match editing{
+                                EditType::Free => {app.push_new_line()}
+                                EditType::Square => {app.set_new_rect_position([position, position])}
+                                EditType::Circle => {app.set_new_circle_position([position, position])}
+                                EditType::Arrow => {app.set_new_arrow_position([position, position])}
+                                _ =>{}
                             }
-                        }else{
-                            if i.pointer.primary_pressed(){
-                                let origin = i.pointer.press_origin().unwrap();
-                                app.set_edit_coords_position(1,origin);
-                                app.set_edit_coords_position(2,origin);
+
+                        }
+                    }
+                    if i.pointer.is_decidedly_dragging(){
+                        if let Some(editing) = app.get_editing().clone(){
+                            let position = i.pointer.interact_pos().unwrap().clone();
+                            match editing{
+                                EditType::Free => {app.push_new_position(position)}
+                                EditType::Square => {app.update_rect_position(position)}
+                                EditType::Circle => {app.update_circle_position(position)}
+                                EditType::Arrow => {app.update_arrow_position(position)}
+                                _ =>{}
                             }
-                            if i.pointer.is_decidedly_dragging(){
-                                if i.pointer.primary_down(){
-                                    let pos= i.pointer.interact_pos().unwrap();
-                                    app.set_edit_coords_position(1, app.get_edit_position()[1]);
-                                    app.set_edit_coords_position(2, pos);
-                                    edit_utils(app);
-                                }else{
-                                    app.set_edit_coords_position(1,Pos2::new(0.0,0.0));
-                                    app.set_edit_coords_position(2,Pos2::new(0.0,0.0));
-                                }
-                            }
+
                         }
                     }
                 }
@@ -135,13 +139,14 @@ pub(crate) mod input{
                             //ascolto la tastiera dagli eventi key
                             Key {key, pressed, repeat, modifiers}=>{
                                 if !*repeat && *pressed {
+                                    //sto premendo i tasti della tastiera in un momento qualsiasi
                                     if let Some(modifier) = find_modifier(modifiers){
-                                        modifier.iter().for_each(|modifier| set_keys_or_press_keys(app,app.get_request_state(),KeysEnum::Modifier(*modifier)));
+                                        modifier.iter().for_each(|modifier| app.set_pressed_key(modifier));
                                     }
                                     //set pressed key
-                                    set_keys_or_press_keys(app,app.get_request_state(),KeysEnum::Key(*key));
+                                    app.set_pressed_key(key.name());
                                 } else if !*pressed && !app.get_request_state().equal("HotkeysSelection") {
-                                    //cerco corrispondenza nella mappa se non è vuota
+                                    //potrei far partire una hotkey function
                                     if !app.get_hotkey_enable().is_empty() {
                                         for (k, v) in app.get_hotkey_enable() {
                                            if compare_keys(app.get_press_keys(), k.clone()){
@@ -151,10 +156,10 @@ pub(crate) mod input{
                                     }
                                     app.clear_press_keys();
                                 }else if !*pressed && app.get_request_state().equal("HotkeysSelection"){
-                                    //check that the vector of keys just pressed is unique
+                                    //sto settando le hotkeys
                                     if !app.get_hotkey_enable().is_empty(){
                                         for k in app.get_hotkey_enable().keys(){
-                                            if compare_keys(app.get_keys(), k.clone()){
+                                            if compare_keys(app.get_press_keys(), k.clone()){
                                                 app.set_repeated_keys(true);
                                             }
                                         }

@@ -1,6 +1,7 @@
 pub mod app_enums{
     use egui::Modifiers;
     use egui_extras::RetainedImage;
+    use std::collections::HashMap;
     use serde::{Deserialize, Serialize};
 
     ///enum for all screenshot type
@@ -102,33 +103,82 @@ pub mod app_enums{
     #[derive(Debug, PartialEq, Copy, Clone, Eq, Serialize, Deserialize)]
     pub enum EditType{
         Text,
-        Painting,
+        Free,
+        Square,
+        Circle,
+        Arrow
     }
     impl EditType{
         pub fn equal(self, edit_type:&str) -> bool {
             match edit_type{
                 "Text" =>{self == EditType::Text},
-                "Painting" =>{self == EditType::Painting},
+                "Free" =>{self == EditType::Free},
+                "Square" =>{self == EditType::Square},
+                "Arrow" => {self == EditType::Arrow}
+                _ => {panic!("INVALID EDIT TYPE IN INPUT")}
+            }
+        }
+        pub fn to_string(self) -> String{
+            match self {
+                EditType::Text => {"".to_string()}
+                EditType::Free => {"🖊 Free".to_string()}
+                EditType::Square => {"□ Square".to_string()}
+                EditType::Circle => {"◯ Circle".to_string()}
+                EditType::Arrow => {"← Arrow".to_string()}
+            }
+        }
+        pub fn from_string(value: &str) -> Self{
+            match value{
+                "🖊 Free" =>{EditType::Free}
+                "□ Square" => {EditType::Square}
+                "◯ Circle" => {EditType::Circle}
+                "← Arrow" =>{EditType::Arrow}
                 _ => {panic!("INVALID EDIT TYPE IN INPUT")}
             }
         }
     }
     #[derive(Debug, PartialEq, Clone, Eq, Serialize, Deserialize)]
-    pub struct SavedData{
+    pub struct DefaultOption {
         save_location: Option<String>,
         pub(crate)save_name: String,
         screenshot_numbers: usize,
     }
-    impl Default for SavedData{
+    impl Default for DefaultOption {
         fn default() -> Self {
-            SavedData{save_location:None, save_name:"".into(), screenshot_numbers:0}
+            DefaultOption {save_location:None, save_name:"".into(), screenshot_numbers:0}
         }
     }
-    impl SavedData{
+    impl DefaultOption {
         pub fn get_location(&self) ->Option<String>{self.save_location.clone()}
         pub fn get_name(&self) ->String{self.save_name.clone()}
         pub fn get_screenshot_numbers(&self) ->usize{self.screenshot_numbers}
         pub fn set_location(&mut self, location: String){self.save_location = Some(location)}
         pub fn set_screenshot_number(&mut self, value: usize){self.screenshot_numbers = value}
+    }
+
+    #[derive(Debug, PartialEq, Clone, Eq, Serialize, Deserialize)]
+    pub struct SavedData{
+        hotkeys_function: Vec<String>,
+        shortcuts: Vec<Vec<String>>,
+        default: DefaultOption
+    }
+    impl SavedData{
+
+        pub fn new(hotkeys_function: Vec<String>, shortcuts: Vec<Vec<String>>, default: DefaultOption) -> SavedData{
+            SavedData{hotkeys_function, shortcuts, default }
+        }
+        pub fn get_hotkeys_function(&self) -> Vec<String>{self.hotkeys_function.clone()}
+        pub fn get_shortcuts(&self) -> Vec<Vec<String>>{self.shortcuts.clone()}
+        pub fn get_default(&self) -> DefaultOption{self.default.clone()}
+
+    }
+    impl Default for SavedData{
+        fn default() -> Self {
+            Self{
+                hotkeys_function: vec![],
+                shortcuts: vec![],
+                default: DefaultOption::default()
+            }
+        }
     }
 }

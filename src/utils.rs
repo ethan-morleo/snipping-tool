@@ -7,8 +7,11 @@ pub mod utils{
     use imageproc::drawing::{draw_filled_rect_mut};
     use imageproc::rect::Rect;
     use itertools::Itertools;
+    use rdev::Key::KeyA;
     use crate::enums::app_enums::{EditType, HotkeysFunctions, KeysEnum, RectEdit, RequestState};
     use crate::app::app_utils::MyApp;
+    use crate::enums::app_enums::KeysEnum::Key;
+
     ///retained image from  dynamic image
     pub fn retained_image_from_dynamic(dyn_image:&DynamicImage) -> Option<RetainedImage> {
         Some(RetainedImage::from_color_image(
@@ -19,46 +22,33 @@ pub mod utils{
     }
 
     ///compare function to sort key and modifiers
-    pub(crate) fn sort_key_modifier(a: &KeysEnum, b: & KeysEnum) -> Ordering {
-        if a == b {
-            Ordering::Equal
-        } else if *a == KeysEnum::Modifier(Modifiers::ALT) ||*a == KeysEnum::Modifier(Modifiers::CTRL) ||*a == KeysEnum::Modifier(Modifiers::SHIFT) || *a == KeysEnum::Modifier(Modifiers::COMMAND) || *a == KeysEnum::Modifier(Modifiers::MAC_CMD){
-            Ordering::Less
-        } else if (*a== KeysEnum::Modifier(Modifiers::CTRL) || *a==KeysEnum::Modifier(Modifiers::COMMAND)) && (*b == KeysEnum::Modifier(Modifiers::ALT) || *b == KeysEnum::Modifier(Modifiers::SHIFT)){
-            Ordering::Less
-        }else if (*a== KeysEnum::Modifier(Modifiers::SHIFT) ) && (*b == KeysEnum::Modifier(Modifiers::ALT)){
-            Ordering::Less
-        } else{
-            Ordering::Greater
-        }
-    }
 
     ///method to find modifier given a list
-    pub fn find_modifier(modifiers: &Modifiers) ->Option<Vec<Modifiers>>{
+    pub fn find_modifier(modifiers: &Modifiers) ->Option<Vec<&str>>{
         let mut result = vec![];
         if modifiers.matches(Modifiers::ALT){
-            result.push(Modifiers::ALT);
+            result.push("ALT");
         }else if modifiers.matches(Modifiers::CTRL){
-            result.push(Modifiers::CTRL);
+            result.push("CTRL");
         }else if modifiers.matches(Modifiers::COMMAND){
-            result.push(Modifiers::COMMAND);
+            result.push("COMMAND");
         }else if modifiers.matches(Modifiers::MAC_CMD){
-            result.push(Modifiers::MAC_CMD);
+            result.push("MAC_CMD");
         }else if modifiers.matches(Modifiers::SHIFT){
-            result.push(Modifiers::SHIFT);
+            result.push("SHIFT");
         }else if modifiers.matches(Modifiers::CTRL | Modifiers::SHIFT) {
-            result.push(Modifiers::CTRL);
-            result.push(Modifiers::SHIFT);
+            result.push("CTRL");
+            result.push("SHIFT");
         }else if modifiers.matches(Modifiers::CTRL | Modifiers::ALT){
-            result.push(Modifiers::CTRL);
-            result.push(Modifiers::ALT);
+            result.push("CTRL");
+            result.push("ALT");
         }else if modifiers.matches(Modifiers::ALT | Modifiers::SHIFT){
-            result.push(Modifiers::SHIFT);
-            result.push(Modifiers::ALT);
+            result.push("SHIFT");
+            result.push("ALT");
         }else if modifiers.matches(Modifiers::CTRL | Modifiers::ALT|Modifiers::SHIFT){
-            result.push(Modifiers::CTRL);
-            result.push(Modifiers::SHIFT);
-            result.push(Modifiers::ALT);
+            result.push("CTRL");
+            result.push("ALT");
+            result.push("SHIFT");
         }
         if !result.is_empty(){
             Some(result)
@@ -67,56 +57,14 @@ pub mod utils{
         }
     }
 
-    ///method to set keys or pressed keys
-    pub fn set_keys_or_press_keys(app: &mut MyApp, state: RequestState, key: KeysEnum){
-        if state.equal("HotkeysSelection"){
-            app.set_key(key);
-        }else{
-            app.set_pressed_key(key);
-        }
-    }
-
-    ///method to stringify modifier
-    pub fn stringify_mod(modifiers: &Modifiers) -> &'static str {
-        if modifiers.matches(Modifiers::ALT){
-            "ALT"
-        }else if modifiers.matches(Modifiers::CTRL){
-            "CTRL"
-        }else if modifiers.matches(Modifiers::COMMAND){
-            "COMMAND"
-        }else if modifiers.matches(Modifiers::MAC_CMD){
-            "MAC CMD"
-        }else if modifiers.matches(Modifiers::SHIFT ){
-            "SHIFT"
-        }else{
-            ""
-        }
-    }
-
     ///method to stringify keys or modifier
-    pub fn keys_string(keys: Vec<KeysEnum>) -> String{
-        keys.iter().map(
-            |k|{
-                match k{
-                    KeysEnum::Key(key)=>{key.symbol_or_name()},
-                    KeysEnum::Modifier(modifier)=>{stringify_mod(modifier)}
-                }
-            }
-        ).unique().collect::<Vec<_>>().join(" + ")
+    pub fn keys_string(keys: Vec<String>) -> String{
+        keys.iter().join(" + ")
     }
 
-    ///method to sort pressed keys or hotkeys for normalizing equals
-    pub fn sort_keys(vec: Vec<KeysEnum>) -> Vec<KeysEnum>{
-        let mut sorted_vec = vec;
-        sorted_vec.sort_by(sort_key_modifier);
-        sorted_vec
-    }
+    pub fn compare_keys(keys1 : Vec<String>, keys2: Vec<String>) -> bool{
 
-    pub fn compare_keys(keys1 : Vec<KeysEnum>, keys2: Vec<KeysEnum>) -> bool{
-        let sort_pressed_keys = sort_keys(keys1);
-        let sort_hotkeys = sort_keys(keys2);
-
-        return if sort_pressed_keys.iter().unique().collect::<Vec<_>>() == sort_hotkeys.iter().unique().collect::<Vec<_>>() {
+        return if keys1 == keys2{
             true
         } else {
             false
@@ -124,7 +72,7 @@ pub mod utils{
     }
 
     ///method to know all selectable hotkeys functions
-    pub fn get_possible_hotkeys_functions(enable_functions: HashMap<Vec<KeysEnum>, String>) -> Vec<HotkeysFunctions>{
+    pub fn get_possible_hotkeys_functions(enable_functions: HashMap<Vec<String>, String>) -> Vec<HotkeysFunctions>{
         let mut all_functions = vec![HotkeysFunctions::NewFull, HotkeysFunctions::NewCustom];
         all_functions.retain(
             |function| !enable_functions.values().map(|v| HotkeysFunctions::into_enum(v.as_str())).contains(function)
@@ -173,27 +121,6 @@ pub mod utils{
                 }
             }
             _ => {}
-        }
-    }
-
-    pub fn edit_utils(app: &mut MyApp){
-        let white = Rgba([0u8, 255u8, 0u8, 1u8]);
-        if let Some(edit_type) = app.get_edit_type(){
-            match edit_type {
-                EditType::Text => {
-                    //draw_text_mut(app.get_edit_image(), white, app.get_edit_position()[0].x as i32, app.get_edit_position()[0].y as i32, )
-                }
-                EditType::Painting => {
-                    let edit_positions = app.get_edit_position().clone();
-                    let height = (edit_positions[0].y - edit_positions[1].y).abs();
-                    if height>0.0{
-                        draw_filled_rect_mut(app.get_edit_image(), Rect::at(edit_positions[0].x as i32, edit_positions[0].y as i32).of_size(20, height as u32), white);
-                    }else{
-                        draw_filled_rect_mut(app.get_edit_image(), Rect::at(edit_positions[0].x as i32, edit_positions[0].y as i32).of_size(20, 1), white);
-                    }
-                    app.set_new_edit_image();
-                }
-            }
         }
     }
 
