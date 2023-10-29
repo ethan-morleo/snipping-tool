@@ -138,11 +138,10 @@ impl eframe::App for MyApp {
                 ui.separator();
                 if self.get_screen_type()==ScreenshotType::CUSTOM {ui.add_space(10.0);}
                 draw_image(self, frame,ui);
-
                 if frame.info().window_info.size.x == 0.0 && frame.info().window_info.size.y == 0.0{
                     frame.request_user_attention(UserAttentionType::Informational);
                 }
-                ui.add_space(10.0);
+                ui.add_space(5.0);
             }
             //--------------------------------------------------------------------------------------
             //EDIT IMAGE UI
@@ -158,6 +157,7 @@ impl eframe::App for MyApp {
                         if ui.add(egui::ImageButton::new(
                             self.get_icon(12).texture_id(ctx), Vec2::new(30.0,30.0)
                         )).clicked(){
+                            self.editing = None;
                             frame.request_screenshot();
                         }
                     }

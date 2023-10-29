@@ -353,7 +353,7 @@
                     self.set_first_processed(false);
                 }
                 //if rect type and not rect choosen then maximize the frame
-                else if self.screen_type==ScreenshotType::CUSTOM && !self.is_rect_choosen() && !self.get_request_state().equal("PROCESSED"){
+                else if self.screen_type==ScreenshotType::CUSTOM && !self.is_rect_choosen(){
                     self.image_show=true;
                     frame.set_minimized(false);
                     frame.set_always_on_top(true);
@@ -486,6 +486,7 @@
                 self.rect_choosen=false;
                 self.edit_image = false;
                 self.first_processed = false;
+                self.editing = None;
             }
         }
         //------------------------------------------------------------------------------------------
