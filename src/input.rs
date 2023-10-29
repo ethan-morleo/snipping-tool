@@ -2,9 +2,8 @@ pub(crate) mod input{
     use std::cmp::{max, min};
     use arboard::Clipboard;
     use egui::Event::Key;
-    use egui::{Color32, Painter, Pos2, Rect, Response, Shape, Stroke};
-    use egui::emath::RectTransform;
-    use crate::enums::app_enums::{EditType, HotkeysFunctions, KeysEnum, RectEdit};
+    use egui::{Pos2};
+    use crate::enums::app_enums::{EditType, HotkeysFunctions, RectEdit};
     use crate::app::app_utils::MyApp;
     use crate::utils::utils::{change_rect, compare_keys, find_modifier};
 

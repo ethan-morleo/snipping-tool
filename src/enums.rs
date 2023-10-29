@@ -1,7 +1,6 @@
 pub mod app_enums{
     use egui::Modifiers;
     use egui_extras::RetainedImage;
-    use std::collections::HashMap;
     use serde::{Deserialize, Serialize};
 
     ///enum for all screenshot type
@@ -75,14 +74,12 @@ pub mod app_enums{
     pub struct ImageToShow{
         pub(crate) full_ret_image: Option<RetainedImage>,
         pub(crate) custom_ret_image: Option<RetainedImage>,
-        pub(crate) edit: Option<RetainedImage>
     }
     impl Default for ImageToShow{
         fn default() -> Self {
             Self{
                 full_ret_image: None,
-                custom_ret_image: None,
-                edit: None
+                custom_ret_image: None
             }
         }
     }
@@ -105,16 +102,6 @@ pub mod app_enums{
         Small,
         Medium,
         Large
-    }
-    impl SizeType {
-        pub fn equal(self, edit_type: &str) -> bool {
-            match edit_type {
-                "Small" => { self == SizeType::Small},
-                "Medium" => { self == SizeType::Medium },
-                "Large" => { self == SizeType::Large },
-                _ => { panic!("INVALID EDIT TYPE IN INPUT") }
-            }
-        }
     }
 
     #[derive(Debug, PartialEq, Copy, Clone, Eq, Serialize, Deserialize)]
@@ -145,16 +132,6 @@ pub mod app_enums{
                 EditType::Circle => {"Circle".to_string()}
                 EditType::Arrow => {"Arrow".to_string()}
                 EditType::Highlight =>{"Highlight".to_string()}
-            }
-        }
-        pub fn from_string(value: &str) -> Self{
-            match value{
-                "🖊 Free" =>{EditType::Free}
-                "Square" => {EditType::Square}
-                "Circle" => {EditType::Circle}
-                "Arrow" =>{EditType::Arrow}
-                "Highlight" =>{EditType::Highlight}
-                _ => {panic!("INVALID EDIT TYPE IN INPUT")}
             }
         }
     }

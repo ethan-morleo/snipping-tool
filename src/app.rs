@@ -32,7 +32,7 @@
         use arboard::{Clipboard, ImageData};
         use eframe;
         use egui;
-        use egui::{Color32, ColorImage, Pos2, Response, Ui, UserAttentionType, Vec2};
+        use egui::{Color32, Pos2, Ui};
         use egui_extras::RetainedImage;
         use screenshots::{DisplayInfo, Screen};
         use crate::app::screen_utils;
@@ -40,7 +40,7 @@
         use image::{DynamicImage};
         use itertools::Itertools;
         use crate::app::screen_utils::get_screen;
-        use crate::enums::app_enums::{EditType, HotkeysFunctions, ImageToShow, KeysEnum, RectEdit, RequestState, DefaultOption, ScreenshotType, SavedData, SizeType};
+        use crate::enums::app_enums::{EditType, HotkeysFunctions, ImageToShow, RectEdit, RequestState, DefaultOption, ScreenshotType, SavedData, SizeType};
         use crate::utils::utils::{retained_image_from_dynamic};
 
         pub struct MyApp {
@@ -139,7 +139,6 @@
             pub fn get_circle_paint_position(&self) ->Vec<[Pos2;2]>{self.circle_paint_position.clone()}
             pub fn get_arrow_paint_position(&self) ->Vec<[Pos2;2]>{self.arrow_paint_position.clone()}
             pub fn get_highlight_paint_position(&self) ->Vec<[Pos2;2]>{self.highlight_paint_position.clone()}
-            pub fn get_screen_selected(&self) -> usize{self.screen_selected}
             pub fn get_rect_image(&mut self) -> &mut RetainedImage{self.image.custom_ret_image.as_mut().unwrap()}
             pub fn get_hotkey_enable(&self) -> HashMap<Vec<String>, String>{self.hotkeys_enable.clone()}
             pub fn get_hotkey_selected(&self) -> HotkeysFunctions{self.hotkey_selected}
@@ -212,7 +211,6 @@
             pub fn set_setup(&mut self, value: bool){self.setup = value}
             pub fn set_first_processed(&mut self, value: bool){self.first_processed = value}
             pub fn set_saved_default(&mut self, data: DefaultOption){self.saved_default = data}
-            pub fn set_editing(&mut self, edit: EditType){self.editing = Some(edit)}
             pub fn set_edit_image(&mut self, value: bool){self.edit_image = value}
             pub fn set_new_rect_position(&mut self, pos: [Pos2; 2]){ self.rect_paint_position.push(pos)}
             pub fn update_rect_position(&mut self, pos: Pos2){
@@ -295,7 +293,10 @@
                     if self.screen_type.equal("FULL"){
                         frame.set_minimized(true);
                     }else{
-                        frame.set_window_pos(Pos2::new(-5000.0,-5000.0));
+                        if!self.get_request_state().equal("PROCESSED"){
+                            frame.set_minimized(true);
+                        }
+                        //frame.set_window_pos(Pos2::new(-5000.0,-5000.0));
                     }
                 }else if self.is_multi_display && !self.state.equal("ChoiceMonitor"){
                     self.state = RequestState::ChoiceMonitor
@@ -317,21 +318,21 @@
                         let frame_info = frame.info().window_info.size;
                         let x_image = frame_info.x*0.8;
                         let y_image = frame_info.y * 0.8;
-                        let mut x_scale = f32::default();
-                        let mut y_scale = f32::default();
                         if self.get_screen_type().equal("FULL"){
-                            x_scale = x_image/self.get_full_image().width() as f32;
-                            y_scale = y_image/self.get_full_image().height() as f32;
+                            let x_scale = x_image/self.get_full_image().width() as f32;
+                            let y_scale = y_image/self.get_full_image().height() as f32;
                             let zoom = if x_scale <= y_scale { x_scale } else { y_scale };
                             self.get_full_image().show_scaled(ui, zoom);
                         }else{
                             if self.is_rect_choosen(){
-                                x_scale = x_image/self.get_rect_image().width() as f32;
-                                y_scale = y_image/self.get_rect_image().height() as f32;
+                                let x_scale = x_image/self.get_rect_image().width() as f32;
+                                let y_scale = y_image/self.get_rect_image().height() as f32;
                                 let zoom = if x_scale <= y_scale { x_scale } else { y_scale };
                                 self.get_rect_image().show_scaled(ui, zoom as f32);
                             }else{
-                                self.image.full_ret_image.as_mut().unwrap().show_scaled(ui, 0.92);
+                                if !self.get_request_state().equal("PROCESSED"){
+                                    self.image.full_ret_image.as_mut().unwrap().show_scaled(ui, 0.92);
+                                }
                             }
 
                         }
@@ -352,8 +353,11 @@
                     self.set_first_processed(false);
                 }
                 //if rect type and not rect choosen then maximize the frame
-                else if self.screen_type==ScreenshotType::CUSTOM && !self.is_rect_choosen(){
+                else if self.screen_type==ScreenshotType::CUSTOM && !self.is_rect_choosen() && !self.get_request_state().equal("PROCESSED"){
                     self.image_show=true;
+                    frame.set_minimized(false);
+                    frame.set_always_on_top(true);
+                    frame.focus();
                     frame.set_maximized(true);
                 }
                 //if rect type and rect choosen set maximized false and fullscreen false
@@ -366,7 +370,7 @@
             ///state-change from incomplete based on use case
             ///take the screenshot in case of full or rect mode of single display
             /// going in choice monitor if multi display usage
-            pub fn process_incomplete_request(&mut self, ctx: &egui::Context){
+            pub fn process_incomplete_request(&mut self){
                 self.erased =false;
                 self.rect_shown = false;
                 if !self.is_multi_display || (self.is_multi_display && self.state.equal("INCOMPLETE")) {
@@ -375,12 +379,12 @@
                         thread::sleep(Duration::from_secs(self.get_delay() as u64))
                     }
                     if self.screen_type.equal("FULL") {
-                        self.full_screenshot(&screen_utils::get_screen(self.screen_selected));
+                        self.full_screenshot(&get_screen(self.screen_selected));
                         self.set_request_state(RequestState::Processed);
                     }
                     //caso rect
                     else {
-                        self.full_screenshot(&screen_utils::get_screen(self.screen_selected));
+                        self.full_screenshot(&get_screen(self.screen_selected));
                         self.set_request_state(RequestState::ChoiceRect);
                     }
                 }

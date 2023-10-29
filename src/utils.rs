@@ -1,17 +1,12 @@
 pub mod utils{
-    use std::cmp::{max, min, Ordering};
+    use std::cmp::{max, min};
     use std::collections::HashMap;
     use egui::{Color32, ColorImage, CursorIcon, Modifiers, Pos2};
-    use egui::ImageData::Color;
     use egui_extras::RetainedImage;
-    use image::{DynamicImage, Rgba};
-    use imageproc::drawing::{draw_filled_rect_mut};
-    use imageproc::rect::Rect;
+    use image::{DynamicImage};
     use itertools::Itertools;
-    use rdev::Key::KeyA;
-    use crate::enums::app_enums::{EditType, HotkeysFunctions, KeysEnum, RectEdit, RequestState, SizeType};
+    use crate::enums::app_enums::{HotkeysFunctions, RectEdit};
     use crate::app::app_utils::MyApp;
-    use crate::enums::app_enums::KeysEnum::Key;
 
     ///retained image from  dynamic image
     pub fn retained_image_from_dynamic(dyn_image:&DynamicImage) -> Option<RetainedImage> {

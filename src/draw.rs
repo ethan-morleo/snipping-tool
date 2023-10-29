@@ -2,19 +2,16 @@ pub(crate) mod draw_utils{
     use std::path::Path;
     use arboard::{Clipboard};
     use eframe::emath::Vec2;
-    use egui::{Color32, emath, Image, Pos2, Rect, Rounding, Stroke, Ui};
+    use egui::{Color32, emath, Pos2, Rect, Rounding, Stroke, Ui};
     use native_dialog::FileDialog;
     use std::string::String;
-    use egui::color_picker::Alpha;
     use crate::enums::app_enums::{EditType, HotkeysFunctions, RequestState, ScreenshotType, SizeType};
     use crate::app::app_utils::MyApp;
-    use crate::app::screen_utils::get_screen;
     use crate::utils::utils::{get_color_from_str, get_possible_hotkeys_functions, get_str_from_color, keys_string};
 
     ///DRAW NEW SCREENSHOT BUTTON
     pub fn draw_new_button( app: &mut MyApp, frame:&mut eframe::Frame, ui: &mut Ui, ctx: &egui::Context){
-        ui.add_space(30.0);
-
+        ui.add_space(20.0);
         if ui.add(egui::ImageButton::new(
             app.get_icon(0).texture_id(ctx),
             Vec2::new(30.0, 30.0)
@@ -106,17 +103,6 @@ pub(crate) mod draw_utils{
                     ui.selectable_value(&mut app.delay, delay_type, format!("{:?}", delay_type));
                 }
             });
-    }
-    ///DRAW TEXT BUTTON
-    pub fn draw_text_button(app: &mut MyApp, ui: &mut Ui, ctx: &egui::Context){
-        ui.add_space(20.0);
-        //new button
-        if ui.add(egui::Button::image_and_text(
-            app.get_icon(11).texture_id(ctx),
-            Vec2::new(30.0, 30.0),
-            "TEXT"
-        )).clicked(){
-        }
     }
     ///DRAW PAINTING COMBOBOX
     pub fn draw_painting_combobox(app: &mut MyApp, ui: &mut Ui){
@@ -289,7 +275,7 @@ pub(crate) mod draw_utils{
     ///DRAW IMAGE ON UI DIFFERENTLY BASED ON USE CASE
     pub fn draw_image(app: &mut MyApp, frame: &mut eframe::Frame, ui:&mut Ui){
         if !app.is_erased(){
-            if (app.get_screen_type()==ScreenshotType::FULL || app.is_rect_choosen()){
+            if app.get_screen_type()==ScreenshotType::FULL || app.is_rect_choosen(){
                 ui.horizontal_centered(
                     |ui|{
                         ui.vertical_centered(
@@ -317,7 +303,7 @@ pub(crate) mod draw_utils{
                 let image_size = app.get_rect_image().size();
                 frame.set_fullscreen(false);
                 frame.set_maximized(false);
-                frame.set_window_size(Vec2::new(image_size[0] as f32*1.2, image_size[1] as f32*1.2));
+                frame.set_window_size(Vec2::new(image_size[0] as f32*2.0, image_size[1] as f32*2.0));
                 frame.set_centered();
                 app.set_request_state(RequestState::Processed); //transition to final state
             }
@@ -338,6 +324,7 @@ pub(crate) mod draw_utils{
                 app.set_rect_position(1, Pos2::new(0.0,0.0));
                 app.set_rect_position(2, Pos2::new(0.0,0.0));
             }else if app.get_request_state().equal("EditImage") {
+                app.editing = None;
                 app.erase_drawing();
                 app.set_request_state(RequestState::Processed)
             } else{
