@@ -303,7 +303,8 @@ pub(crate) mod draw_utils{
                 let image_size = app.get_rect_image().size();
                 frame.set_fullscreen(false);
                 frame.set_maximized(false);
-                frame.set_window_size(Vec2::new(image_size[0] as f32*2.0, image_size[1] as f32*2.0));
+                let x_size = if image_size[0] as f32*1.1 < 400.0{400.0}else{image_size[0] as f32*1.1};
+                frame.set_window_size(Vec2::new(x_size, image_size[1] as f32*1.1+60.0));
                 frame.set_centered();
                 app.set_request_state(RequestState::Processed); //transition to final state
             }
