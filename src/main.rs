@@ -1,12 +1,12 @@
 
 use eframe::{egui, HardwareAcceleration, Storage};
-use egui::{Align, ColorImage, CursorIcon, Layout, Pos2, Rect};
+use egui::{Align, ColorImage, CursorIcon, Layout, Pos2, Rect, UserAttentionType, Vec2};
 use egui_extras::RetainedImage;
 use image::{DynamicImage, RgbaImage};
 use itertools::Itertools;
 use crate::app::app_utils::MyApp;
 use crate::app::screen_utils::get_screen;
-use crate::draw::draw_utils::{draw_add_hotkey_combobox, draw_all_paintings, draw_back_button, draw_back_menu_button, draw_combobox, draw_copy_button, draw_delay_combobox, draw_delete_button, draw_delete_function_button, draw_edit_button, draw_enable_hotkeys_shortcuts, draw_erase_button, draw_file_picker, draw_image, draw_line, draw_monitor_button, draw_more_menu, draw_new_button, draw_ok_button, draw_ok_shortcut_button, draw_painting_combobox, draw_red_rect, draw_save_folder, draw_select_hotkey, draw_shortcut_selection, draw_text_button, draw_text_edit, ok_default_button};
+use crate::draw::draw_utils::{draw_add_hotkey_combobox, draw_all_paintings, draw_back_button, draw_back_menu_button, draw_color_picker_button, draw_combobox, draw_copy_button, draw_delay_combobox, draw_delete_button, draw_delete_function_button, draw_edit_button, draw_enable_hotkeys_shortcuts, draw_erase_button, draw_file_picker, draw_image, draw_line, draw_monitor_button, draw_more_menu, draw_new_button, draw_ok_button, draw_ok_shortcut_button, draw_painting_combobox, draw_red_rect, draw_save_folder, draw_select_hotkey, draw_shortcut_selection, draw_text_button, draw_text_edit, ok_default_button};
 use crate::enums::app_enums::{EditType, RequestState, SavedData, ScreenshotType};
 use crate::input::input::{control_keyboard, control_mouse_input};
 use crate::utils::utils::{get_possible_hotkeys_functions, set_cursor};
@@ -20,13 +20,14 @@ mod input;
 mod utils;
 fn  main() -> Result<(), eframe::Error> {
     let mut options = eframe::NativeOptions {
-        initial_window_size: Some(egui::vec2(500.0, 500.0)),
+        initial_window_size: Some(egui::vec2(300.0, 300.0)),
         ..Default::default()
     };
      options.decorated = true;
      options.drag_and_drop_support = true;
      options.follow_system_theme = true;
      options.resizable = true;
+     options.centered = true;
      options.hardware_acceleration = HardwareAcceleration::Preferred;
 
     eframe::run_native(
@@ -47,7 +48,6 @@ impl eframe::App for MyApp {
         }
 
         let clipboard = &mut arboard::Clipboard::new().unwrap();
-        frame.set_decorations(true);
 
         //------------------------------------------------------------------------------------------
         //state change from incomplete, no ui needed
@@ -60,18 +60,21 @@ impl eframe::App for MyApp {
             //--------------------------------------------------------------------------------------
             //UI FOR THE APP IN INITIALIZED
             if self.get_request_state().equal("INITIALIZED"){
-                ui.horizontal(|ui|{
-                    draw_new_button(self, frame, ui, ctx);
-                    draw_combobox(self,ui);
-                    ui.separator();
-                    ui.label("DELAY: ");
-                    draw_delay_combobox(self, ui);
-                    ui.with_layout(
-                        Layout::right_to_left(Align::Center),
-                        |ui|{
-                            draw_more_menu(self,ui,ctx);
-                        }
-                    )
+                ui.with_layout(Layout::top_down(Align::LEFT), |ui|{
+                    ui.horizontal(|ui|{
+                        draw_new_button(self, frame, ui, ctx);
+                        draw_combobox(self,ui);
+                        ui.separator();
+                        ui.label("DELAY: ");
+                        draw_delay_combobox(self, ui);
+                        ui.with_layout(
+                            Layout::right_to_left(Align::Center),
+                            |ui|{
+                                draw_more_menu(self,ui,ctx);
+                            }
+                        )
+                    }
+                    );
                 });
                 ui.separator();
             }
@@ -80,7 +83,9 @@ impl eframe::App for MyApp {
             if self.get_request_state().equal("ChoiceMonitor"){
                 for i in 1..self.get_display_number()+1{
                     ui.add_space(30.0);
-                    draw_monitor_button(self,ui,ctx,i, frame);
+                    ui.horizontal_centered(|ui|{
+                        draw_monitor_button(self,ui,ctx,i, frame);
+                    });
                 }
             }
             //--------------------------------------------------------------------------------------
@@ -115,10 +120,12 @@ impl eframe::App for MyApp {
                 ui.horizontal(
                     |ui|{
                         draw_new_button(self,frame,ui,ctx);
-                        draw_erase_button(self,ui,ctx);
+                        draw_combobox(self, ui);
                         ui.separator();
                         ui.label("DELAY");
                         draw_delay_combobox(self,ui);
+                        ui.separator();
+                        draw_erase_button(self,ui,ctx);
                         draw_edit_button(self,ui,ctx);
                         draw_file_picker(self,ui,ctx);
                         draw_copy_button(self,ui,ctx,clipboard);
@@ -131,9 +138,13 @@ impl eframe::App for MyApp {
                         );
                     });
                 ui.separator();
-                if self.get_screen_type()==ScreenshotType::CUSTOM {ui.add_space(20.0);}
+                if self.get_screen_type()==ScreenshotType::CUSTOM {ui.add_space(10.0);}
                 draw_image(self, frame,ui);
-                ui.add_space(20.0);
+
+                if (frame.info().window_info.size.x == 0.0 && frame.info().window_info.size.y == 0.0){
+                    frame.request_user_attention(UserAttentionType::Informational);
+                }
+                ui.add_space(10.0);
             }
             //--------------------------------------------------------------------------------------
             //EDIT IMAGE UI
@@ -141,9 +152,14 @@ impl eframe::App for MyApp {
                 control_mouse_input(self, ctx);
                 ui.horizontal(
                     |ui|{
+                        draw_back_button(self, ui, ctx);
                         draw_painting_combobox(self, ui);
-                        draw_text_button(self, ui, ctx);
-                        if ui.button("SAVE").clicked(){
+                        draw_color_picker_button(self, ui);
+                        ui.separator();
+                        draw_erase_button(self, ui, ctx);
+                        if ui.add(egui::ImageButton::new(
+                            self.get_icon(12).texture_id(ctx), Vec2::new(30.0,30.0)
+                        )).clicked(){
                             frame.request_screenshot();
                         }
                     }
@@ -244,8 +260,8 @@ impl eframe::App for MyApp {
         if let Some(screenshot) = _frame.screenshot(){
             self.erase_drawing();
             let mut window_size = _frame.info().window_info.size;
-            window_size.y = window_size.y.clone() -50.0;
-            let region = Rect::from_min_size(Pos2::new(0.0,50.0), window_size);
+            window_size.y = window_size.y.clone() -54.0;
+            let region = Rect::from_min_size(Pos2::new(0.0,54.0), window_size);
             let real_screenshot = screenshot.region(&region,_frame.info().native_pixels_per_point);
             let image = RetainedImage::from_color_image(
                 "edit_image",
@@ -258,6 +274,7 @@ impl eframe::App for MyApp {
             ).unwrap();
             self.set_image_to_show(image);
             self.image_raw = Some( DynamicImage::from(rgba_image));
+            self.set_edit_image(true);
             self.set_request_state(RequestState::Processed);
         }
     }

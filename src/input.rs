@@ -15,30 +15,34 @@ pub(crate) mod input{
             |i|{
                 //add position to draw
                 if app.get_request_state().equal("EditImage"){
-                    if i.pointer.primary_pressed(){
-                        if let Some(editing) = app.get_editing().clone(){
-                            let position = i.pointer.press_origin().unwrap().clone();
-                            match editing{
-                                EditType::Free => {app.push_new_line()}
-                                EditType::Square => {app.set_new_rect_position([position, position])}
-                                EditType::Circle => {app.set_new_circle_position([position, position])}
-                                EditType::Arrow => {app.set_new_arrow_position([position, position])}
-                                _ =>{}
+                    if i.pointer.hover_pos().is_some(){
+                        if i.pointer.hover_pos().unwrap().y>54.0{
+                            if i.pointer.primary_pressed(){
+                                if let Some(editing) = app.get_editing().clone(){
+                                    let position = i.pointer.press_origin().unwrap().clone();
+                                    match editing{
+                                        EditType::Free => {app.push_new_line()}
+                                        EditType::Square => {app.set_new_rect_position([position, position])}
+                                        EditType::Circle => {app.set_new_circle_position([position, position])}
+                                        EditType::Arrow => {app.set_new_arrow_position([position, position])}
+                                        EditType::Highlight =>{app.set_new_highlight_position([position, position])}
+                                        _ =>{}
+                                    }
+                                }
                             }
-
-                        }
-                    }
-                    if i.pointer.is_decidedly_dragging(){
-                        if let Some(editing) = app.get_editing().clone(){
-                            let position = i.pointer.interact_pos().unwrap().clone();
-                            match editing{
-                                EditType::Free => {app.push_new_position(position)}
-                                EditType::Square => {app.update_rect_position(position)}
-                                EditType::Circle => {app.update_circle_position(position)}
-                                EditType::Arrow => {app.update_arrow_position(position)}
-                                _ =>{}
+                            if i.pointer.is_decidedly_dragging(){
+                                if let Some(editing) = app.get_editing().clone(){
+                                    let position = i.pointer.interact_pos().unwrap().clone();
+                                    match editing{
+                                        EditType::Free => {app.push_new_position(position)}
+                                        EditType::Square => {app.update_rect_position(position)}
+                                        EditType::Circle => {app.update_circle_position(position)}
+                                        EditType::Arrow => {app.update_arrow_position(position)}
+                                        EditType::Highlight =>{app.update_highlight_position(position)}
+                                        _ =>{}
+                                    }
+                                }
                             }
-
                         }
                     }
                 }

@@ -32,7 +32,7 @@
         use arboard::{Clipboard, ImageData};
         use eframe;
         use egui;
-        use egui::{ColorImage, Pos2, Response, Ui, UserAttentionType, Vec2};
+        use egui::{Color32, ColorImage, Pos2, Response, Ui, UserAttentionType, Vec2};
         use egui_extras::RetainedImage;
         use screenshots::{DisplayInfo, Screen};
         use crate::app::screen_utils;
@@ -40,7 +40,7 @@
         use image::{DynamicImage};
         use itertools::Itertools;
         use crate::app::screen_utils::get_screen;
-        use crate::enums::app_enums::{EditType, HotkeysFunctions, ImageToShow, KeysEnum, RectEdit, RequestState, DefaultOption, ScreenshotType, SavedData};
+        use crate::enums::app_enums::{EditType, HotkeysFunctions, ImageToShow, KeysEnum, RectEdit, RequestState, DefaultOption, ScreenshotType, SavedData, SizeType};
         use crate::utils::utils::{retained_image_from_dynamic};
 
         pub struct MyApp {
@@ -70,7 +70,12 @@
             rect_paint_position: Vec<[Pos2;2]>,
             circle_paint_position: Vec<[Pos2;2]>,
             arrow_paint_position: Vec<[Pos2; 2]>,
-            pub(crate)editing: Option<EditType>
+            highlight_paint_position: Vec<[Pos2;2]>,
+            pub(crate)editing: Option<EditType>,
+            first_processed: bool,
+            edit_image: bool,
+            pub(crate)color: Color32,
+            pub(crate)highlight_size: Option<SizeType>
         }
 
         impl Default for MyApp{
@@ -103,7 +108,12 @@
                     rect_paint_position: vec![],
                     circle_paint_position: vec![],
                     arrow_paint_position: vec![],
-                    editing: None
+                    highlight_paint_position: vec![],
+                    editing: None,
+                    highlight_size: Some(SizeType::Small),
+                    first_processed: false,
+                    edit_image: false,
+                    color: Color32::BLUE
                 }
             }
         }
@@ -124,9 +134,11 @@
             pub fn get_image_raw(&mut self) -> &mut DynamicImage{self.image_raw.as_mut().unwrap()}
             pub fn get_full_image(&mut self) -> &mut RetainedImage{self.image.full_ret_image.as_mut().unwrap()}
             pub fn get_editing(&self) -> Option<EditType>{self.editing}
+            pub fn get_highlight_size(&self) -> Option<SizeType>{self.highlight_size}
             pub fn get_rect_paint_position(&self) ->Vec<[Pos2;2]>{self.rect_paint_position.clone()}
             pub fn get_circle_paint_position(&self) ->Vec<[Pos2;2]>{self.circle_paint_position.clone()}
             pub fn get_arrow_paint_position(&self) ->Vec<[Pos2;2]>{self.arrow_paint_position.clone()}
+            pub fn get_highlight_paint_position(&self) ->Vec<[Pos2;2]>{self.highlight_paint_position.clone()}
             pub fn get_screen_selected(&self) -> usize{self.screen_selected}
             pub fn get_rect_image(&mut self) -> &mut RetainedImage{self.image.custom_ret_image.as_mut().unwrap()}
             pub fn get_hotkey_enable(&self) -> HashMap<Vec<String>, String>{self.hotkeys_enable.clone()}
@@ -144,29 +156,25 @@
             pub fn get_rect_edit(&self) -> Option<RectEdit>{self.rect_edit.clone()}
             pub fn is_repeated_keys(&self) -> bool{self.repeated_keys}
             pub fn is_setup(&self) ->bool{self.setup}
+            pub fn is_first_processed(&self) -> bool{self.first_processed}
+
+            pub fn is_edit_image(&self) -> bool{self.edit_image}
             //--------------------------------------------------------------------------------------
             //SETTER
             pub fn set_request_state(&mut self, state: RequestState){
                 self.state = state;
             }
-
             pub fn set_erased(&mut self, is_erased: bool) {
                 self.erased = is_erased
             }
-
             pub fn set_screen_type(&mut self, screen_type: ScreenshotType){ self.screen_type = screen_type }
-
             pub fn set_rect_position(&mut self, in_or_fin: usize, pos2:Pos2){
                 if in_or_fin==1{self.rect_positions[0] = pos2}
                 else {self.rect_positions[1] = pos2}
             }
-
             pub fn set_rect_choosen(&mut self, is_rect_choosen: bool){self.rect_choosen = is_rect_choosen}
-
             pub fn set_outside_rect(&mut self, is_outside_rect: bool){ self.outside_rect = is_outside_rect}
-
             pub fn set_hotkey_selected(&mut self, function: HotkeysFunctions){self.hotkey_selected = function}
-
             pub fn set_hotkey_enable(&mut self, function: HotkeysFunctions, keys: Vec<String>){
                 //check on keys (if hotkeys already exist)
                 if self.hotkeys_enable.contains_key(&*keys){
@@ -182,7 +190,6 @@
                     self.hotkeys_enable.insert(keys, function.to_string().to_string());
                 }
             }
-
             pub fn set_hotkeys_map(&mut self, functions: Vec<String>, shortcuts: Vec<Vec<String>>){
                 self.hotkeys_enable = HashMap::new();
                 for i in 0..functions.len(){
@@ -190,13 +197,9 @@
                 }
             }
             pub fn set_repeated_keys(&mut self, value: bool){self.repeated_keys = value}
-
             pub fn set_pressed_key(&mut self, key: &str){self.press_keys.push(key.to_string())}
-
             pub fn set_rect_shown(&mut self, value: bool){self.rect_shown = value}
-
             pub fn set_rect_edit(&mut self, value: Option<RectEdit>){self.rect_edit = value}
-
             pub fn set_screen_selected(&mut self, value: usize){self.screen_selected = value}
             pub fn set_image_to_show(&mut self, image: RetainedImage){
                 if self.screen_type.equal("FULL"){
@@ -207,8 +210,10 @@
             }
             pub fn set_save_location(&mut self, location: String){self.saved_default.set_location(location)}
             pub fn set_setup(&mut self, value: bool){self.setup = value}
+            pub fn set_first_processed(&mut self, value: bool){self.first_processed = value}
             pub fn set_saved_default(&mut self, data: DefaultOption){self.saved_default = data}
             pub fn set_editing(&mut self, edit: EditType){self.editing = Some(edit)}
+            pub fn set_edit_image(&mut self, value: bool){self.edit_image = value}
             pub fn set_new_rect_position(&mut self, pos: [Pos2; 2]){ self.rect_paint_position.push(pos)}
             pub fn update_rect_position(&mut self, pos: Pos2){
                 let len = self.rect_paint_position.len().clone() -1;
@@ -223,6 +228,11 @@
             pub fn update_arrow_position(&mut self, pos: Pos2){
                 let len = self.arrow_paint_position.len().clone() -1;
                 self.arrow_paint_position[len][1] = pos;
+            }
+            pub fn set_new_highlight_position(&mut self, pos: [Pos2; 2]){ self.highlight_paint_position.push(pos)}
+            pub fn update_highlight_position(&mut self, pos: Pos2){
+                let len = self.highlight_paint_position.len().clone() -1;
+                self.highlight_paint_position[len][1] = pos;
             }
             //--------------------------------------------------------------------------------------
             //UTILS
@@ -261,6 +271,7 @@
                 self.rect_paint_position.clear();
                 self.circle_paint_position.clear();
                 self.arrow_paint_position.clear();
+                self.highlight_paint_position.clear();
             }
             //--------------------------------------------------------------------------------------
             //PUBLIC METHOD
@@ -291,33 +302,42 @@
                 }
             }
 
-            ///show image on ui based on use case
+            ///show image on ui based on frame window size
             /// @ frame and ui -> taken by egui implementation in main.rs
-            pub fn show_image(&mut self, ui: &mut Ui){
-                    //full -> scalata al 0.8
-                if self.screen_type == ScreenshotType::FULL{
-                    ui.allocate_ui(
-                        Vec2::new((self.image.full_ret_image.as_mut().unwrap().width() as f32 *0.85),
-                                  self.image.full_ret_image.as_mut().unwrap().height() as f32*0.85),
-                        |ui|{
-                            self.image.full_ret_image.as_mut().unwrap().show_scaled(ui, 0.85);
-                        }
-                    );
-                }
-                //se rect distingui i casi in cui ho già scelto l'area oppure no
-                else{
-                    if self.is_rect_choosen(){
-                        ui.allocate_ui(
-                            Vec2::new(self.image.custom_ret_image.as_mut().unwrap().width() as f32*0.92,
-                                      self.image.custom_ret_image.as_mut().unwrap().height() as f32*0.92),
-                            |ui|{
-                                self.image.custom_ret_image.as_mut().unwrap().show_scaled(ui, 0.9);
-                            }
-                        );
+            pub fn show_image(&mut self, ui: &mut Ui, frame: &mut eframe::Frame){
+                //cerchiamo di mostrare l'immagine riempitiva un 80% del frame se non proviene da un edit
+                if self.is_edit_image(){
+                    if self.get_screen_type().equal("FULL"){
+                        self.get_full_image().show(ui);
                     }else{
-                        self.image.full_ret_image.as_mut().unwrap().show_scaled(ui, 0.92);
+                        self.get_rect_image().show(ui);
+                    }
+                }else{
+                    if frame.info().window_info.size.x != 0.0 && frame.info().window_info.size.y != 0.0{
+                        let frame_info = frame.info().window_info.size;
+                        let x_image = frame_info.x*0.8;
+                        let y_image = frame_info.y * 0.8;
+                        let mut x_scale = f32::default();
+                        let mut y_scale = f32::default();
+                        if self.get_screen_type().equal("FULL"){
+                            x_scale = x_image/self.get_full_image().width() as f32;
+                            y_scale = y_image/self.get_full_image().height() as f32;
+                            let zoom = if x_scale <= y_scale { x_scale } else { y_scale };
+                            self.get_full_image().show_scaled(ui, zoom);
+                        }else{
+                            if self.is_rect_choosen(){
+                                x_scale = x_image/self.get_rect_image().width() as f32;
+                                y_scale = y_image/self.get_rect_image().height() as f32;
+                                let zoom = if x_scale <= y_scale { x_scale } else { y_scale };
+                                self.get_rect_image().show_scaled(ui, zoom as f32);
+                            }else{
+                                self.image.full_ret_image.as_mut().unwrap().show_scaled(ui, 0.92);
+                            }
+
+                        }
                     }
                 }
+
             }
             ///reformat frame and ui with image
             /// screen_type==FULL-> give attention to user to reopen frame
@@ -325,11 +345,11 @@
             /// screen_type==RECT && rect_choosen -> almost 100%, resize frame
             /// @ frame and ui taken from main.rs
             pub fn ui_with_image(&mut self, frame: &mut eframe::Frame, ui: &mut Ui){
-                self.show_image(ui);
-                if self.screen_type.equal("FULL"){
+                self.show_image(ui, frame);
+                if self.screen_type.equal("FULL") && self.is_first_processed() {
                     self.image_show=true;
-                    let original_size = self.image.full_ret_image.as_mut().unwrap().size_vec2();
-                    frame.request_user_attention(UserAttentionType::Informational);
+                    frame.set_centered();
+                    self.set_first_processed(false);
                 }
                 //if rect type and not rect choosen then maximize the frame
                 else if self.screen_type==ScreenshotType::CUSTOM && !self.is_rect_choosen(){
@@ -337,10 +357,9 @@
                     frame.set_maximized(true);
                 }
                 //if rect type and rect choosen set maximized false and fullscreen false
-                else if self.screen_type==ScreenshotType::CUSTOM && self.is_rect_choosen(){
+                else if self.screen_type==ScreenshotType::CUSTOM && self.is_rect_choosen() && self.is_first_processed(){
                     self.image_show=true;
-                    frame.set_maximized(false);
-                    frame.set_fullscreen(false);
+                    self.set_first_processed(false);
                 }
             }
 
@@ -402,6 +421,7 @@
                         self.reinit_app();
                         self.erased=true;
                     }else{
+                        self.set_edit_image(false);
                         self.set_request_state(RequestState::Processed);
                     }
 
@@ -460,6 +480,8 @@
                 self.rect_positions=[Pos2::new(0.0,0.0), Pos2::new(0.0,0.0)];
                 self.outside_rect=false;
                 self.rect_choosen=false;
+                self.edit_image = false;
+                self.first_processed = false;
             }
         }
         //------------------------------------------------------------------------------------------
@@ -468,8 +490,8 @@
         fn init_icons() -> Vec<RetainedImage> {
             vec![
                 RetainedImage::from_image_bytes(
-                    "cut icon", //0
-                    include_bytes!("../icons/scissors.png"),
+                    "add icon", //0
+                    include_bytes!("../icons/add.png"),
                 ).unwrap(),
                 RetainedImage::from_image_bytes(
                     "display icon", //1
@@ -514,6 +536,10 @@
                 RetainedImage::from_image_bytes(
                     "text", //11
                     include_bytes!("../icons/text.png")
+                ).unwrap(),
+                RetainedImage::from_image_bytes(
+                    "text", //12
+                    include_bytes!("../icons/save_edit.png")
                 ).unwrap()
             ]
         }

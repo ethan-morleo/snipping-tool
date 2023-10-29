@@ -1,14 +1,15 @@
 pub mod utils{
     use std::cmp::{max, min, Ordering};
     use std::collections::HashMap;
-    use egui::{ColorImage, CursorIcon, Modifiers, Pos2};
+    use egui::{Color32, ColorImage, CursorIcon, Modifiers, Pos2};
+    use egui::ImageData::Color;
     use egui_extras::RetainedImage;
     use image::{DynamicImage, Rgba};
     use imageproc::drawing::{draw_filled_rect_mut};
     use imageproc::rect::Rect;
     use itertools::Itertools;
     use rdev::Key::KeyA;
-    use crate::enums::app_enums::{EditType, HotkeysFunctions, KeysEnum, RectEdit, RequestState};
+    use crate::enums::app_enums::{EditType, HotkeysFunctions, KeysEnum, RectEdit, RequestState, SizeType};
     use crate::app::app_utils::MyApp;
     use crate::enums::app_enums::KeysEnum::Key;
 
@@ -124,4 +125,27 @@ pub mod utils{
         }
     }
 
+    pub fn get_color_from_str(color: &str) -> Color32{
+        match color {
+            "RED" => Color32::RED,
+            "BLUE" => Color32::BLUE,
+            "GREEN" => Color32::GREEN,
+            "YELLOW" => Color32::YELLOW,
+            "BLACK" => Color32::BLACK,
+            "BROWN" => Color32::BROWN,
+            _ => Color32::BLACK
+        }
+    }
+
+    pub fn get_str_from_color(color: Color32) -> String{
+        match color {
+            Color32::RED => "RED".to_string(),
+            Color32::BLUE => "BLUE".to_string(),
+            Color32::YELLOW => "YELLOW".to_string(),
+            Color32::BROWN => "BROWN".to_string(),
+            Color32::BLACK => "BLACK".to_string(),
+            Color32::GREEN => "GREEN".to_string(),
+            _ => "BLACK".to_string()
+        }
+    }
 }

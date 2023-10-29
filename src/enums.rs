@@ -101,12 +101,30 @@ pub mod app_enums{
     }
 
     #[derive(Debug, PartialEq, Copy, Clone, Eq, Serialize, Deserialize)]
+    pub enum SizeType{
+        Small,
+        Medium,
+        Large
+    }
+    impl SizeType {
+        pub fn equal(self, edit_type: &str) -> bool {
+            match edit_type {
+                "Small" => { self == SizeType::Small},
+                "Medium" => { self == SizeType::Medium },
+                "Large" => { self == SizeType::Large },
+                _ => { panic!("INVALID EDIT TYPE IN INPUT") }
+            }
+        }
+    }
+
+    #[derive(Debug, PartialEq, Copy, Clone, Eq, Serialize, Deserialize)]
     pub enum EditType{
         Text,
         Free,
         Square,
         Circle,
-        Arrow
+        Arrow,
+        Highlight
     }
     impl EditType{
         pub fn equal(self, edit_type:&str) -> bool {
@@ -115,6 +133,7 @@ pub mod app_enums{
                 "Free" =>{self == EditType::Free},
                 "Square" =>{self == EditType::Square},
                 "Arrow" => {self == EditType::Arrow}
+                "Highlight" =>{self == EditType::Highlight}
                 _ => {panic!("INVALID EDIT TYPE IN INPUT")}
             }
         }
@@ -122,17 +141,19 @@ pub mod app_enums{
             match self {
                 EditType::Text => {"".to_string()}
                 EditType::Free => {"🖊 Free".to_string()}
-                EditType::Square => {"□ Square".to_string()}
-                EditType::Circle => {"◯ Circle".to_string()}
-                EditType::Arrow => {"← Arrow".to_string()}
+                EditType::Square => {"Square".to_string()}
+                EditType::Circle => {"Circle".to_string()}
+                EditType::Arrow => {"Arrow".to_string()}
+                EditType::Highlight =>{"Highlight".to_string()}
             }
         }
         pub fn from_string(value: &str) -> Self{
             match value{
                 "🖊 Free" =>{EditType::Free}
-                "□ Square" => {EditType::Square}
-                "◯ Circle" => {EditType::Circle}
-                "← Arrow" =>{EditType::Arrow}
+                "Square" => {EditType::Square}
+                "Circle" => {EditType::Circle}
+                "Arrow" =>{EditType::Arrow}
+                "Highlight" =>{EditType::Highlight}
                 _ => {panic!("INVALID EDIT TYPE IN INPUT")}
             }
         }
