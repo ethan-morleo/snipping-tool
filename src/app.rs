@@ -75,7 +75,8 @@
             first_processed: bool,
             edit_image: bool,
             pub(crate)color: Color32,
-            pub(crate)highlight_size: Option<SizeType>
+            pub(crate)highlight_size: Option<SizeType>,
+            screen_made: bool
         }
 
         impl Default for MyApp{
@@ -113,7 +114,8 @@
                     highlight_size: Some(SizeType::Small),
                     first_processed: false,
                     edit_image: false,
-                    color: Color32::BLUE
+                    color: Color32::BLUE,
+                    screen_made: false
                 }
             }
         }
@@ -125,7 +127,6 @@
             pub fn get_screen_type(&self) -> ScreenshotType{ self.screen_type }
             pub fn get_icon(&self, index:usize) -> &RetainedImage { self.icons.get(index).unwrap()}
             pub fn get_rect_position(&self) -> [Pos2;2]{ self.rect_positions }
-
             pub fn get_painting_position(&self) -> Vec<Vec<Pos2>>{self.painter_position.clone()}
             pub fn push_new_line(&mut self){self.painter_position.push(vec![])}
             pub fn push_new_position(&mut self, position:Pos2){
@@ -144,20 +145,19 @@
             pub fn get_hotkey_selected(&self) -> HotkeysFunctions{self.hotkey_selected}
             pub fn get_default(&self) -> DefaultOption {self.saved_default.clone()}
             pub fn get_press_keys(&self) -> Vec<String>{self.press_keys.clone()}
-            pub fn get_display_number(&self) -> usize{self.screen_number}
-            pub fn get_delay(&self) -> i32 {self.delay}
-            pub fn is_erased(&self) -> bool{
-                self.erased
-            }
-            pub fn is_outside_rect(&self) -> bool{self.outside_rect}
-            pub fn is_rect_choosen(&self) ->bool{self.rect_choosen}
-            pub fn is_rect_shown(&self)->bool{ self.rect_shown }
+            pub fn get_display_number(&self) -> usize{self.screen_number.clone()}
+            pub fn get_delay(&self) -> i32 {self.delay.clone()}
+            pub fn is_erased(&self) -> bool{ self.erased.clone() }
+            pub fn is_outside_rect(&self) -> bool{self.outside_rect.clone()}
+            pub fn is_rect_choosen(&self) ->bool{self.rect_choosen.clone()}
+            pub fn is_rect_shown(&self)->bool{ self.rect_shown.clone() }
             pub fn get_rect_edit(&self) -> Option<RectEdit>{self.rect_edit.clone()}
-            pub fn is_repeated_keys(&self) -> bool{self.repeated_keys}
-            pub fn is_setup(&self) ->bool{self.setup}
-            pub fn is_first_processed(&self) -> bool{self.first_processed}
-
-            pub fn is_edit_image(&self) -> bool{self.edit_image}
+            pub fn is_repeated_keys(&self) -> bool{self.repeated_keys.clone()}
+            pub fn is_setup(&self) ->bool{self.setup.clone()}
+            pub fn is_first_processed(&self) -> bool{self.first_processed.clone()}
+            pub fn get_screen_selected(&self) ->usize{self.screen_selected.clone()}
+            pub fn is_edit_image(&self) -> bool{self.edit_image.clone()}
+            pub fn is_screen_made(&self) ->bool{self.screen_made.clone()}
             //--------------------------------------------------------------------------------------
             //SETTER
             pub fn set_request_state(&mut self, state: RequestState){
@@ -173,6 +173,7 @@
             }
             pub fn set_rect_choosen(&mut self, is_rect_choosen: bool){self.rect_choosen = is_rect_choosen}
             pub fn set_outside_rect(&mut self, is_outside_rect: bool){ self.outside_rect = is_outside_rect}
+            pub fn set_screen_made(&mut self, value: bool){self.screen_made = value}
             pub fn set_hotkey_selected(&mut self, function: HotkeysFunctions){self.hotkey_selected = function}
             pub fn set_hotkey_enable(&mut self, function: HotkeysFunctions, keys: Vec<String>){
                 //check on keys (if hotkeys already exist)
@@ -288,17 +289,14 @@
                 self.screen_number = displays;
                 self.increment_screenshot_number();
                 //adjust frame to take screenshot easily
-                if !self.is_multi_display || (self.is_multi_display && self.state.equal("ChoiceMonitor")){
-                    self.state = RequestState::Incomplete;
+                if !self.is_multi_display.clone() || (self.is_multi_display.clone() && self.state.equal("ChoiceMonitor")){
                     if self.screen_type.equal("FULL"){
                         frame.set_minimized(true);
                     }else{
-                        if!self.get_request_state().equal("PROCESSED"){
-                            frame.set_minimized(true);
-                        }
-                        //frame.set_window_pos(Pos2::new(-5000.0,-5000.0));
+                        frame.set_visible(false);
                     }
-                }else if self.is_multi_display && !self.state.equal("ChoiceMonitor"){
+                    self.set_request_state(RequestState::Incomplete);
+                }else if self.is_multi_display.clone() && !self.state.equal("ChoiceMonitor"){
                     self.state = RequestState::ChoiceMonitor
                 }
             }
@@ -355,9 +353,6 @@
                 //if rect type and not rect choosen then maximize the frame
                 else if self.screen_type==ScreenshotType::CUSTOM && !self.is_rect_choosen(){
                     self.image_show=true;
-                    frame.set_minimized(false);
-                    frame.set_always_on_top(true);
-                    frame.focus();
                     frame.set_maximized(true);
                 }
                 //if rect type and rect choosen set maximized false and fullscreen false
@@ -373,18 +368,15 @@
             pub fn process_incomplete_request(&mut self){
                 self.erased =false;
                 self.rect_shown = false;
-                if !self.is_multi_display || (self.is_multi_display && self.state.equal("INCOMPLETE")) {
-                    //caso full
+                if !self.is_multi_display.clone() || (self.is_multi_display.clone() && self.state.equal("INCOMPLETE")) {
                     if self.get_delay() !=0{
                         thread::sleep(Duration::from_secs(self.get_delay() as u64))
                     }
                     if self.screen_type.equal("FULL") {
-                        self.full_screenshot(&get_screen(self.screen_selected));
                         self.set_request_state(RequestState::Processed);
                     }
                     //caso rect
                     else {
-                        self.full_screenshot(&get_screen(self.screen_selected));
                         self.set_request_state(RequestState::ChoiceRect);
                     }
                 }
@@ -487,6 +479,7 @@
                 self.edit_image = false;
                 self.first_processed = false;
                 self.editing = None;
+                self.screen_made = false;
             }
         }
         //------------------------------------------------------------------------------------------

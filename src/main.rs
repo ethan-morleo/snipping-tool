@@ -5,6 +5,7 @@ use egui_extras::RetainedImage;
 use image::{DynamicImage, RgbaImage};
 use itertools::Itertools;
 use crate::app::app_utils::MyApp;
+use crate::app::screen_utils::get_screen;
 use crate::draw::draw_utils::{draw_add_hotkey_combobox, draw_all_paintings, draw_back_button, draw_back_menu_button, draw_color_picker_button, draw_combobox, draw_copy_button, draw_delay_combobox, draw_delete_button, draw_delete_function_button, draw_edit_button, draw_enable_hotkeys_shortcuts, draw_erase_button, draw_file_picker, draw_image, draw_monitor_button, draw_more_menu, draw_new_button, draw_ok_button, draw_ok_shortcut_button, draw_painting_combobox, draw_red_rect, draw_save_folder, draw_select_hotkey, draw_shortcut_selection, draw_text_edit, ok_default_button};
 use crate::enums::app_enums::{RequestState, SavedData, ScreenshotType};
 use crate::input::input::{control_keyboard, control_mouse_input};
@@ -40,6 +41,7 @@ fn  main() -> Result<(), eframe::Error> {
 impl eframe::App for MyApp {
 
     fn update(&mut self, ctx: &egui::Context, frame: &mut eframe::Frame) {
+        ctx.set_pixels_per_point(1.0);
         //setup the app in the first update in case of restore of user preferences
         if !self.is_setup(){
             self.setup();
@@ -47,12 +49,6 @@ impl eframe::App for MyApp {
         }
 
         let clipboard = &mut arboard::Clipboard::new().unwrap();
-
-        //------------------------------------------------------------------------------------------
-        //state change from incomplete, no ui needed
-        if self.get_request_state().equal("INCOMPLETE"){
-           self.process_incomplete_request();
-        }
 
         egui::CentralPanel::default().show(ctx, |ui| {
             control_keyboard(self,ctx, frame, clipboard);
@@ -90,58 +86,68 @@ impl eframe::App for MyApp {
             //--------------------------------------------------------------------------------------
             //UI FOR CHOOSING SCREENSHOT CUSTOM AREA
             if self.get_request_state().equal("ChoiceRect"){
-                ui.horizontal(
-                    |ui|{
-                        draw_image(self, frame,ui);
-                        control_mouse_input(self, ctx);
-                        ui.add_space(15.0);
-                        ui.vertical(
-                          |ui|{
-                              draw_ok_button(self,ui,ctx, frame);
-                              draw_back_button(self,ui,ctx);
-                          }
-                        );
-                        if !self.is_outside_rect() && !self.is_rect_shown(){
-                            ctx.set_cursor_icon(CursorIcon::Crosshair);
-                        } else if self.is_rect_shown(){
-                            set_cursor(self, ctx);
-                        }
+                if !self.is_screen_made(){
+                    self.full_screenshot(&get_screen(self.get_screen_selected()));
+                    self.set_screen_made(true);
+                }else{
+                    frame.set_visible(true);
+                    ui.horizontal(
+                        |ui|{
+                            draw_image(self, frame,ui);
+                            control_mouse_input(self, ctx);
+                            ui.add_space(15.0);
+                            ui.vertical(
+                                |ui|{
+                                    draw_ok_button(self,ui,ctx, frame);
+                                    draw_back_button(self,ui,ctx);
+                                }
+                            );
+                            if !self.is_outside_rect() && !self.is_rect_shown(){
+                                ctx.set_cursor_icon(CursorIcon::Crosshair);
+                            } else if self.is_rect_shown(){
+                                set_cursor(self, ctx);
+                            }
 
-                        draw_red_rect(self, ui);
-                    }
-                );
+                            draw_red_rect(self, ui);
+                        }
+                    );
+                }
             }
             //--------------------------------------------------------------------------------------
             //UI IN TERMINAL STATE
             if self.get_request_state().equal("PROCESSED"){
                 set_cursor(self, ctx);
-
-                ui.horizontal(
-                    |ui|{
-                        draw_new_button(self,frame,ui,ctx);
-                        ui.separator();
-                        ui.label("DELAY");
-                        draw_delay_combobox(self,ui);
-                        ui.separator();
-                        draw_erase_button(self,ui,ctx);
-                        draw_edit_button(self,ui,ctx);
-                        draw_file_picker(self,ui,ctx);
-                        draw_copy_button(self,ui,ctx,clipboard);
-                        ui.with_layout(
-                            Layout::right_to_left(Align::Center),
-                            |ui|{
-                                draw_more_menu(self,ui,ctx);
-                                ui.separator();
-                            }
-                        );
-                    });
-                ui.separator();
-                if self.get_screen_type()==ScreenshotType::CUSTOM {ui.add_space(10.0);}
-                draw_image(self, frame,ui);
-                if frame.info().window_info.size.x == 0.0 && frame.info().window_info.size.y == 0.0{
-                    frame.request_user_attention(UserAttentionType::Informational);
+                if !self.is_screen_made(){
+                    self.full_screenshot(&get_screen(self.get_screen_selected()));
+                    self.set_screen_made(true);
+                }else{
+                    ui.horizontal(
+                        |ui|{
+                            draw_new_button(self,frame,ui,ctx);
+                            ui.separator();
+                            ui.label("DELAY");
+                            draw_delay_combobox(self,ui);
+                            ui.separator();
+                            draw_erase_button(self,ui,ctx);
+                            draw_edit_button(self,ui,ctx);
+                            draw_file_picker(self,ui,ctx);
+                            draw_copy_button(self,ui,ctx,clipboard);
+                            ui.with_layout(
+                                Layout::right_to_left(Align::Center),
+                                |ui|{
+                                    draw_more_menu(self,ui,ctx);
+                                    ui.separator();
+                                }
+                            );
+                        });
+                    ui.separator();
+                    if self.get_screen_type()==ScreenshotType::CUSTOM {ui.add_space(10.0);}
+                    draw_image(self, frame,ui);
+                    if frame.info().window_info.size.x == 0.0 && frame.info().window_info.size.y == 0.0{
+                        frame.request_user_attention(UserAttentionType::Informational);
+                    }
+                    ui.add_space(5.0);
                 }
-                ui.add_space(5.0);
             }
             //--------------------------------------------------------------------------------------
             //EDIT IMAGE UI
@@ -238,6 +244,11 @@ impl eframe::App for MyApp {
                 ok_default_button(self, ui);
             }
         });
+        //------------------------------------------------------------------------------------------
+        //state change from incomplete, no ui needed
+        if self.get_request_state().equal("INCOMPLETE"){
+            self.process_incomplete_request();
+        }
     }
 
     fn save(&mut self, _storage: &mut dyn Storage) {
@@ -260,7 +271,7 @@ impl eframe::App for MyApp {
             let mut window_size = _frame.info().window_info.size;
             window_size.y = window_size.y.clone() -54.0;
             let region = Rect::from_min_size(Pos2::new(0.0,54.0), window_size);
-            let real_screenshot = screenshot.region(&region,_frame.info().native_pixels_per_point);
+            let real_screenshot = screenshot.region(&region, Some(1.0));
             let image = RetainedImage::from_color_image(
                 "edit_image",
                 real_screenshot.clone()
