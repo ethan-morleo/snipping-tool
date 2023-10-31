@@ -3,41 +3,26 @@ pub mod app_enums{
     use egui_extras::RetainedImage;
     use serde::{Deserialize, Serialize};
 
-    ///enum for all screenshot type
-    #[derive(Debug, PartialEq, Copy, Clone)]
-    pub enum ScreenshotType{
-        FULL,
-        CUSTOM
-    }
-    impl ScreenshotType{
-        pub fn equal(self, state:&str) -> bool {
-            match state{
-                "FULL" =>{self ==ScreenshotType::FULL},
-                "CUSTOM" =>{self ==ScreenshotType::CUSTOM },
-                _ => {panic!("INVALID TYPE IN INPUT")}
-            }
-        }
-    }
     ///enum for all request state
     #[derive(Debug, PartialEq, Copy, Clone, Serialize, Deserialize)]
     pub enum RequestState{
-        Initialized, //non ho premuto il tasto +
-        Incomplete, //caso in cui ho premuto il tasto + e devo fare lo screen
-        ChoiceRect, //ho fatto lo screen per la fake trasparenza devo scegliere il rettangolo
-        ChoiceMonitor, //caso di multi display sto alla schermata di scelta del monitor
-        Processed, //ho terminato la richiesta
+        Initialized, //home page
+        Reframe, //between press + button and taking screen
+        ChoiceScreen, //after taking full screen, choosing the custom area
+        ChoiceMonitor, //if multidisplay, monitor selection page
+        Processed, //terminal state
         HotkeyWindow,
         HotkeysAdd,
-        HotkeysSelection, //scelgo le hotkeys
-        EditImage,  //edit immagine
-        SavePreferences
+        HotkeysSelection, //hotkeys states
+        EditImage,  //painting on image page
+        SavePreferences //save default location and name page
     }
     impl RequestState{
         pub fn equal(self, state:&str) -> bool {
             match state{
                 "INITIALIZED" =>{self ==RequestState::Initialized },
-                "INCOMPLETE" =>{self ==RequestState::Incomplete },
-                "ChoiceRect" =>{self == RequestState::ChoiceRect },
+                "Reframe" =>{self ==RequestState::Reframe },
+                "ChoiceScreen" =>{self == RequestState::ChoiceScreen },
                 "ChoiceMonitor" =>{self == RequestState::ChoiceMonitor },
                 "HotkeyWindow" =>{self == RequestState::HotkeyWindow },
                 "HotkeysAdd" =>{self == RequestState::HotkeysAdd },
@@ -70,25 +55,6 @@ pub mod app_enums{
             }
         }
     }
-
-    pub struct ImageToShow{
-        pub(crate) full_ret_image: Option<RetainedImage>,
-        pub(crate) custom_ret_image: Option<RetainedImage>,
-    }
-    impl Default for ImageToShow{
-        fn default() -> Self {
-            Self{
-                full_ret_image: None,
-                custom_ret_image: None
-            }
-        }
-    }
-    #[derive(Debug, PartialEq, Copy, Clone, Eq, Hash, Serialize, Deserialize)]
-    pub enum KeysEnum{
-        Key(egui::Key),
-        Modifier(Modifiers)
-    }
-
     #[derive(Debug, PartialEq, Copy, Clone, Eq, Serialize, Deserialize)]
     pub enum RectEdit{
         HorizontalLeft,

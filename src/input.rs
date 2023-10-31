@@ -5,7 +5,7 @@ pub(crate) mod input{
     use egui::{Pos2};
     use crate::enums::app_enums::{EditType, HotkeysFunctions, RectEdit};
     use crate::app::app_utils::MyApp;
-    use crate::utils::utils::{change_rect, compare_keys, find_modifier};
+    use crate::utils::utils::{change_rect, compare_keys, find_modifier, retained_image_from_dynamic};
 
 
     ///method to control mouse
@@ -45,7 +45,7 @@ pub(crate) mod input{
                         }
                     }
                 }
-                if !(i.pointer.hover_pos().is_some() && i.pointer.hover_pos().unwrap().x>((app.get_full_image().width() as f32*0.92) + 12.0)){
+                if !(i.pointer.hover_pos().is_some() && i.pointer.hover_pos().unwrap().x>((app.get_image_raw().width() as f32*0.92) + 12.0)){
                     app.set_outside_rect(false);
                     if !app.is_rect_shown(){
                         if i.pointer.primary_pressed(){
@@ -55,8 +55,10 @@ pub(crate) mod input{
                         }
                         if i.pointer.is_decidedly_dragging(){
                             if i.pointer.primary_down(){
-                                let pos= i.pointer.interact_pos().unwrap();
-                                app.set_rect_position(2, pos);
+                                if i.pointer.interact_pos().is_some(){
+                                    let pos= i.pointer.interact_pos().unwrap();
+                                    app.set_rect_position(2, pos);
+                                }
                             }else{
                                 let positions = app.get_rect_position();
                                 if positions[0] != positions[1]{
