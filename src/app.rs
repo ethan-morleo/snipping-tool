@@ -28,6 +28,7 @@
         use std::cmp::{min};
         use std::collections::HashMap;
         use arboard::{Clipboard, ImageData};
+        use cfg_if::cfg_if;
         use eframe;
         use egui;
         use egui::{Color32, Pos2, Ui};
@@ -71,7 +72,8 @@
             edit_image: bool,
             pub(crate)color: Color32,
             pub(crate)highlight_size: Option<SizeType>,
-            screen_made: bool
+            screen_made: bool,
+            button_size: f32
         }
 
         impl Default for MyApp{
@@ -108,7 +110,8 @@
                     first_processed: false,
                     edit_image: false,
                     color: Color32::BLUE,
-                    screen_made: false
+                    screen_made: false,
+                    button_size: size.clone()
                 }
             }
         }
@@ -122,8 +125,8 @@
             pub fn get_painting_position(&self) -> Vec<Vec<Pos2>>{self.painter_position.clone()}
             pub fn push_new_line(&mut self){self.painter_position.push(vec![])}
             pub fn push_new_position(&mut self, position:Pos2){
-                let size = self.painter_position.len().clone()-1;
-                self.painter_position[size].push(position)}
+                let vec_size = self.painter_position.len().clone()-1;
+                self.painter_position[vec_size].push(position)}
             pub fn get_image_raw(&mut self) -> &mut DynamicImage{self.image_raw.as_mut().unwrap()}
             pub fn get_retained_image(&mut self) -> &mut RetainedImage{self.image.as_mut().unwrap()}
             pub fn get_editing(&self) -> Option<EditType>{self.editing}
@@ -149,6 +152,7 @@
             pub fn is_edit_image(&self) -> bool{self.edit_image.clone()}
             pub fn is_screen_made(&self) ->bool{self.screen_made.clone()}
             pub fn is_image_show(&self) -> bool{self.image_show.clone()}
+            pub fn get_size_button(&self) ->f32{self.button_size.clone()}
             //--------------------------------------------------------------------------------------
             //SETTER
             pub fn set_request_state(&mut self, state: RequestState){
@@ -180,7 +184,7 @@
             pub fn set_hotkeys_map(&mut self, functions: Vec<String>, shortcuts: Vec<Vec<String>>){
                 self.hotkeys_enable = HashMap::new();
                 for i in 0..functions.len(){
-                    self.hotkeys_enable.insert(shortcuts[i].clone(), functions[i].clone());
+                    self.hotkeys_enable.insert(shortcuts[i.clone()].clone(), functions[i.clone()].clone());
                 }
             }
             pub fn set_repeated_keys(&mut self, value: bool){self.repeated_keys = value}
@@ -193,6 +197,7 @@
             pub fn set_first_processed(&mut self, value: bool){self.first_processed = value}
             pub fn set_saved_default(&mut self, data: DefaultOption){self.saved_default = data}
             pub fn set_edit_image(&mut self, value: bool){self.edit_image = value}
+
             pub fn set_new_rect_position(&mut self, pos: [Pos2; 2]){ self.rect_paint_position.push(pos)}
             pub fn update_rect_position(&mut self, pos: Pos2){
                 let len = self.rect_paint_position.len().clone() -1;
@@ -283,7 +288,7 @@
                         let frame_info = frame.info().window_info.size;
                         let x_image = frame_info.x*0.8;
                         let y_image = frame_info.y * 0.8;
-                        if self.rect_choosen || self.get_request_state().equal("PROCESSED"){
+                        if self.rect_choosen.clone() || self.get_request_state().equal("PROCESSED"){
                             let x_scale = x_image/self.image.as_ref().unwrap().width() as f32;
                             let y_scale = y_image/self.image.as_ref().unwrap().height() as f32;
                             let zoom = if x_scale <= y_scale { x_scale } else { y_scale };
@@ -303,7 +308,7 @@
             /// @ frame and ui taken from main.rs
             pub fn ui_with_image(&mut self, frame: &mut eframe::Frame, ui: &mut Ui){
                 self.load_image_on_screen(ui, frame);
-                if self.is_first_processed() && (self.get_request_state().equal("PROCESSED") || self.rect_choosen) {
+                if self.is_first_processed() && (self.get_request_state().equal("PROCESSED") || self.rect_choosen.clone()) {
                     self.image_show=true;
                     //frame.set_centered();
                     self.set_first_processed(false);
@@ -328,30 +333,30 @@
             /// method that crop full image to custom selected one
             pub fn replace_image_with_rect(&mut self){
                 self.normalize_coords(screen_utils::get_screen(0).display_info);
-                let x_starting_point = min(self.rect_positions[0].x as i32, self.rect_positions[1].x as i32);
-                let y_starting_point = min(self.rect_positions[0].y as i32, self.rect_positions[1].y as i32);
+                let x_starting_point = min(self.rect_positions[0].clone().x as i32, self.rect_positions[1].clone().x as i32);
+                let y_starting_point = min(self.rect_positions[0].clone().y as i32, self.rect_positions[1].clone().y as i32);
                 self.image_raw =Some(self.image_raw.as_mut().unwrap().crop_imm(
                     (x_starting_point) as u32,
                     (y_starting_point) as u32,
-                    ((self.rect_positions[1].x - self.rect_positions[0].x).abs()) as u32,
-                    ((self.rect_positions[1].y - self.rect_positions[0].y).abs()) as u32
+                    ((self.rect_positions[1].clone().x - self.rect_positions[0].clone().x).abs()) as u32,
+                    ((self.rect_positions[1].clone().y - self.rect_positions[0].clone().y).abs()) as u32
                 ));
                 self.image=retained_image_from_dynamic(self.image_raw.as_ref().unwrap());
             }
 
             ///method to transform mouse coords inside frame in actual full image coords
             pub fn normalize_coords(&mut self, disp_info:DisplayInfo){
-                let x_aspect_ratio: f32= disp_info.width as f32/((disp_info.width as f32*0.92)+12.0);
-                let y_aspect_ratio:f32 = disp_info.height as f32 /((disp_info.height as f32 * 0.92)+12.0);
+                let x_aspect_ratio: f32= disp_info.width as f32/((disp_info.width.clone()as f32*0.92)+12.0);
+                let y_aspect_ratio:f32 = disp_info.height as f32 /((disp_info.height.clone() as f32 * 0.92)+12.0);
                 //starting x point normalizing
-                if self.rect_positions[0].x<12.0 { self.rect_positions[0].x = 0.0;}
-                else{ self.rect_positions[0].x = self.rect_positions[0].x*x_aspect_ratio}
+                if self.rect_positions[0].x<12.0 { self.rect_positions[0].x= 0.0;}
+                else{ self.rect_positions[0].x = self.rect_positions[0].clone().x*x_aspect_ratio.clone()}
                 //starting y point normalizing
-                if self.rect_positions[0].y<12.0{ self.rect_positions[0].y=0.0;}
-                else{self.rect_positions[0].y = self.rect_positions[0].y*y_aspect_ratio;}
+                if self.rect_positions[0].y<12.0{ self.rect_positions[0].clone().y=0.0;}
+                else{self.rect_positions[0].y = self.rect_positions[0].clone().y*y_aspect_ratio.clone();}
                 //normalizing final coords
-                self.rect_positions[1].x=self.rect_positions[1].x*x_aspect_ratio;
-                self.rect_positions[1].y=self.rect_positions[1].y*y_aspect_ratio;
+                self.rect_positions[1].x=self.rect_positions[1].clone().x*x_aspect_ratio;
+                self.rect_positions[1].y=self.rect_positions[1].clone().y*y_aspect_ratio;
             }
 
             ///take control of the go back flow for the frontend
@@ -475,6 +480,13 @@
                     include_bytes!("../icons/save_edit.png")
                 ).unwrap()
             ]
+        }
+        cfg_if!{
+            if #[cfg(target_os = "macos")]{
+                static size: f32 = 60.0;
+            }else{
+                static size: f32 = 30.0;
+            }
         }
     }
 

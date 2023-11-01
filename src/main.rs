@@ -8,7 +8,7 @@ use crate::app::app_utils::MyApp;
 use crate::enums::app_enums::{RequestState, SavedData};
 use crate::graphic::graphics::{choice_monitor_page, choice_screen_page, editing_page, home_page, hotkeys_pages, processed_page, saving_option_page};
 use crate::input::input::{control_keyboard};
-
+use crate::utils::utils::custom_fonts;
 
 
 mod app;
@@ -59,6 +59,7 @@ impl eframe::App for MyApp {
         //UI
         egui::CentralPanel::default().show(ctx, |ui| {
             control_keyboard(self,ctx, frame, clipboard);
+            custom_fonts(ctx);
             //--------------------------------------------------------------------------------------
             //UI FOR THE APP IN INITIALIZED
             if self.get_request_state().equal("INITIALIZED"){

@@ -15,7 +15,7 @@ pub(crate) mod components {
         ui.add_space(20.0);
         if ui.add(egui::ImageButton::new(
             app.get_icon(0).texture_id(ctx),
-            Vec2::new(30.0, 30.0)
+            Vec2::new(app.get_size_button(), app.get_size_button())
         )).on_hover_text("NEW SCREENSHOT").clicked(){
             new_screen_command(app,frame);
         }
@@ -115,6 +115,12 @@ pub(crate) mod components {
     pub fn reset_button(app: &mut MyApp, ui: &mut Ui){
         if ui.button("RESET").clicked(){
             reset_shortcut_command(app);
+        }
+    }
+
+    pub fn back_shortcut_button(app: &mut MyApp, ui: &mut Ui){
+        if ui.button("BACK").clicked(){
+            go_back_command(app);
         }
     }
     ///DELETE SHORTCUT BUTTON

@@ -78,9 +78,9 @@ pub fn select_screen_command(app: &mut MyApp, frame: &mut eframe::Frame){
         let image_size = app.get_retained_image().size();
         frame.set_fullscreen(false);
         frame.set_maximized(false);
-        let x_size = if (image_size[0] as f32)< 700.0{700.0}else{image_size[0] as f32};
-        frame.set_window_size(Vec2::new(x_size, image_size[1] as f32*1.1+60.0));
-        frame.set_centered();
+        let x_size = if (image_size[0].clone() as f32)< 700.0{700.0}else{image_size[0].clone() as f32};
+        frame.set_window_size(Vec2::new(x_size, image_size[1].clone() as f32*1.1+60.0));
+        frame.set_window_pos(Pos2::new(0.0, 0.0));
     }
     app.set_request_state(RequestState::Processed); //transition to final state
     app.set_rect_shown(false);

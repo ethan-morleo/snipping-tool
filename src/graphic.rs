@@ -6,7 +6,7 @@ use egui::{Align, CursorIcon, Layout, Ui, UserAttentionType, Vec2};
 use itertools::Itertools;
 use crate::app::app_utils::MyApp;
 use crate::app::screen_utils::get_screen;
-use crate::components::components::{select_hotkey_button, add_hotkey_combobox, delay_combobox, delete_shortcut_button, draw_all_paintings, back_button, color_picker_combobox, copy_button, edit_button, image_on_screen, painting_combobox, draw_red_rect, draw_text_edit, file_save_button, monitor_button, more_menu, new_button, ok_default_save_button, ok_shortcut_button, save_folder_button, screen_selected_button, shortcut_selection, show_enable_hotkeys_shortcuts, reset_button};
+use crate::components::components::{select_hotkey_button, add_hotkey_combobox, delay_combobox, delete_shortcut_button, draw_all_paintings, back_button, color_picker_combobox, copy_button, edit_button, image_on_screen, painting_combobox, draw_red_rect, draw_text_edit, file_save_button, monitor_button, more_menu, new_button, ok_default_save_button, ok_shortcut_button, save_folder_button, screen_selected_button, shortcut_selection, show_enable_hotkeys_shortcuts, reset_button, back_shortcut_button};
 use crate::enums::app_enums::RequestState;
 use crate::input::input::control_mouse_input;
 use crate::utils::utils::{get_possible_hotkeys_functions, set_cursor};
@@ -132,7 +132,7 @@ pub fn hotkeys_pages(ui: &mut Ui, app: &mut MyApp, frame: &mut eframe::Frame, ct
                             }
 
                         }
-                        back_button(app, ui, ctx);
+                        back_shortcut_button(app, ui);
                     });
                 ui.separator();
                 ui.label("SCEGLI TRA LE FUNZIONI E SETTA LE SHORTCUTS");

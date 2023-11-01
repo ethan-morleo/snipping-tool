@@ -1,7 +1,9 @@
 pub mod utils{
     use std::cmp::{max, min};
     use std::collections::HashMap;
-    use egui::{Color32, ColorImage, CursorIcon, Modifiers, Pos2};
+    use egui::{Color32, ColorImage, CursorIcon, epaint, FontFamily, FontId, Modifiers, Pos2};
+    use egui::FontFamily::Proportional;
+    use egui::TextStyle::{Body, Button, Heading, Monospace, Small};
     use egui_extras::RetainedImage;
     use image::{DynamicImage};
     use itertools::Itertools;
@@ -142,5 +144,17 @@ pub mod utils{
             Color32::GREEN => "GREEN".to_string(),
             _ => "BLACK".to_string()
         }
+    }
+    pub fn custom_fonts(ctx: &egui::Context){
+        let mut style = (*ctx.style()).clone();
+        style.text_styles = [
+            (Heading, FontId::new(30.0, Proportional)),
+            (Body, FontId::new(30.0, Proportional)),
+            (Monospace, FontId::new(30.0, Proportional)),
+            (Button, FontId::new(30.0, Proportional)),
+            (Small, FontId::new(30.0, Proportional)),
+        ]
+            .into();
+        ctx.set_style(style);us
     }
 }
