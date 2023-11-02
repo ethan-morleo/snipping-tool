@@ -91,7 +91,7 @@ pub fn processed_page(ui: &mut Ui, app: &mut MyApp, frame: &mut eframe::Frame, c
                 back_button(app, ui, ctx);
                 new_button(app, frame, ui, ctx);
                 ui.separator();
-                ui.label("DELAY");
+                ui.label("DELAY: ");
                 delay_combobox(app, ui);
                 ui.separator();
                 edit_button(app, ui, ctx);

@@ -1,7 +1,7 @@
 pub mod utils{
     use std::cmp::{max, min};
     use std::collections::HashMap;
-    use egui::{Color32, ColorImage, CursorIcon, epaint, FontFamily, FontId, Modifiers, Pos2};
+    use egui::{Color32, ColorImage, CursorIcon, FontId, Modifiers, Pos2};
     use egui::FontFamily::Proportional;
     use egui::TextStyle::{Body, Button, Heading, Monospace, Small};
     use egui_extras::RetainedImage;

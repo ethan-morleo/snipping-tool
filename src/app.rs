@@ -245,6 +245,7 @@
 
             pub fn setup(&mut self){
                 let restore_data: SavedData = confy::load("rust-snipping-tool", None).unwrap_or_default();
+                self.screen_number = 0;
                 let hotkeys_function = restore_data.get_hotkeys_function();
                 let shortcuts = restore_data.get_shortcuts();
                 let default = restore_data.get_default();

@@ -1,5 +1,6 @@
 pub(crate) mod command{
-use std::path::Path;
+    use std::env;
+    use std::path::Path;
 use egui::{Pos2, Ui, Vec2};
 use native_dialog::FileDialog;
 use crate::app::app_utils::MyApp;
@@ -48,14 +49,17 @@ pub fn choice_monitor_command(app: &mut MyApp, frame: &mut eframe::Frame, number
 
 pub fn save_image_command(app: &mut MyApp){
     //check if it's set default location and name
-    let mut default_name : String = String::new();
-    let mut location = String::new();
-    if app.get_default().get_location().is_some(){
-        location = app.get_default().get_location().unwrap();
+    let default_name : String = if !app.get_default().get_name().is_empty(){
+        format!("{} {}", app.get_default().get_name(), app.get_default().get_screenshot_numbers())
+    }else{
+        String::new()
     };
-    if !app.get_default().get_name().is_empty(){
-        default_name = format!("{} {}", app.get_default().get_name(), app.get_default().get_screenshot_numbers())
-    }
+    let location =if app.get_default().get_location().is_some(){
+       app.get_default().get_location().unwrap()
+    }else{
+        env::current_dir().expect("impossible get current directory").to_str().expect("impossible get string").to_string()
+    };
+
     let path = FileDialog::new()
         .add_filter("PNG Image", &["png"])
         .add_filter("JPEG image",&["jpg", "jpeg"] )
