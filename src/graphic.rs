@@ -49,28 +49,34 @@ pub fn choice_screen_page(ui: &mut Ui, app: &mut MyApp, frame: &mut eframe::Fram
         app.full_screenshot(&get_screen(app.get_screen_selected()));
         app.set_screen_made(true);
     }else{
-        if app.is_image_show(){
+        if app.is_image_show() || app.is_full_screen_request(){
             frame.set_visible(true);
         }
-        ui.horizontal(
-            |ui|{
-                image_on_screen(app, frame, ui);
-                control_mouse_input(app, ctx);
-                ui.add_space(15.0);
-                ui.vertical(
-                    |ui|{
-                        screen_selected_button(app, ui, ctx, frame);
-                        back_button(app, ui, ctx);
-                    }
+        if app.is_full_screen_request(){
+            app.set_rect_choosen(true);
+            app.set_request_state(RequestState::Processed);
+            app.set_full_screen_request(false);
+        }else{
+            ui.horizontal(
+                |ui|{
+                    image_on_screen(app, frame, ui);
+                    control_mouse_input(app, ctx);
+                    ui.add_space(15.0);
+                    ui.vertical(
+                        |ui|{
+                            screen_selected_button(app, ui, ctx, frame);
+                            back_button(app, ui, ctx);
+                        }
                 );
-                if !app.is_outside_rect() && !app.is_rect_shown(){
-                    ctx.set_cursor_icon(CursorIcon::Crosshair);
-                } else if app.is_rect_shown(){
-                    set_cursor(app, ctx);
+                    if !app.is_outside_rect() && !app.is_rect_shown(){
+                        ctx.set_cursor_icon(CursorIcon::Crosshair);
+                    } else if app.is_rect_shown(){
+                        set_cursor(app, ctx);
+                    }
+                    draw_red_rect(app, ui);
                 }
-                draw_red_rect(app, ui);
-            }
         );
+        }
     }
 }
 //PROCESSED PAGE
@@ -108,7 +114,7 @@ pub fn processed_page(ui: &mut Ui, app: &mut MyApp, frame: &mut eframe::Frame, c
     }
 }
 //HOTKEYS PAGES
-pub fn hotkeys_pages(ui: &mut Ui, app: &mut MyApp, frame: &mut eframe::Frame, ctx: &egui::Context){
+pub fn hotkeys_pages(ui: &mut Ui, app: &mut MyApp, ctx: &egui::Context){
     if app.get_request_state().equal("HotkeyWindow") || app.get_request_state().equal("HotkeysAdd"){
         ui.vertical(
             |ui|{
@@ -188,7 +194,7 @@ pub fn editing_page(ui: &mut Ui, app: &mut MyApp, frame: &mut eframe::Frame, ctx
     draw_all_paintings(app, ui);
 }
 //DEFAULT LOCATION PAGE
-pub fn saving_option_page(ui: &mut Ui, app: &mut MyApp, frame: &mut eframe::Frame, ctx: &egui::Context){
+pub fn saving_option_page(ui: &mut Ui, app: &mut MyApp, ctx: &egui::Context){
     save_folder_button(app, ui);
     ui.add_space(30.0);
     draw_text_edit(app, ui);

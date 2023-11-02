@@ -145,16 +145,16 @@ pub mod utils{
             _ => "BLACK".to_string()
         }
     }
-    pub fn custom_fonts(ctx: &egui::Context){
+    pub fn custom_fonts(app: &MyApp, ctx: &egui::Context){
         let mut style = (*ctx.style()).clone();
         style.text_styles = [
-            (Heading, FontId::new(30.0, Proportional)),
-            (Body, FontId::new(30.0, Proportional)),
-            (Monospace, FontId::new(30.0, Proportional)),
-            (Button, FontId::new(30.0, Proportional)),
-            (Small, FontId::new(30.0, Proportional)),
+            (Heading, FontId::new(app.get_font_size(), Proportional)),
+            (Body, FontId::new(app.get_font_size(), Proportional)),
+            (Monospace, FontId::new(app.get_font_size(), Proportional)),
+            (Button, FontId::new(app.get_font_size(), Proportional)),
+            (Small, FontId::new(app.get_font_size() - 3.0, Proportional)),
         ]
             .into();
-        ctx.set_style(style);us
+        ctx.set_style(style);
     }
 }

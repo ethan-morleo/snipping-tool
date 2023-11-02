@@ -1,5 +1,4 @@
 pub(crate) mod components {
-    use std::path::Path;
     use arboard::{Clipboard};
     use eframe::emath::Vec2;
     use egui::{Color32, emath, Pos2, Rect, Rounding, Stroke, Ui};

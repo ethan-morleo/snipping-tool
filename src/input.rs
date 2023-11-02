@@ -5,7 +5,7 @@ pub(crate) mod input{
     use egui::{Pos2};
     use crate::enums::app_enums::{EditType, HotkeysFunctions, RectEdit};
     use crate::app::app_utils::MyApp;
-    use crate::utils::utils::{change_rect, compare_keys, find_modifier, retained_image_from_dynamic};
+    use crate::utils::utils::{change_rect, compare_keys, find_modifier};
 
 
     ///method to control mouse
@@ -18,27 +18,33 @@ pub(crate) mod input{
                         if i.pointer.hover_pos().unwrap().y>54.0{
                             if i.pointer.primary_pressed(){
                                 if let Some(editing) = app.get_editing().clone(){
-                                    let position = i.pointer.press_origin().unwrap().clone();
-                                    match editing{
-                                        EditType::Free => {app.push_new_line()}
-                                        EditType::Square => {app.set_new_rect_position([position, position])}
-                                        EditType::Circle => {app.set_new_circle_position([position, position])}
-                                        EditType::Arrow => {app.set_new_arrow_position([position, position])}
-                                        EditType::Highlight =>{app.set_new_highlight_position([position, position])}
-                                        _ =>{}
+                                    if i.pointer.press_origin().is_some(){
+                                        let position = i.pointer.press_origin().unwrap().clone();
+                                        match editing{
+                                            EditType::Free => {app.push_new_line()}
+                                            EditType::Square => {app.set_new_rect_position([position, position])}
+                                            EditType::Circle => {app.set_new_circle_position([position, position])}
+                                            EditType::Arrow => {app.set_new_arrow_position([position, position])}
+                                            EditType::Highlight =>{app.set_new_highlight_position([position, position])}
+                                            _ =>{}
+                                        }  
                                     }
                                 }
                             }
                             if i.pointer.is_decidedly_dragging(){
                                 if let Some(editing) = app.get_editing().clone(){
-                                    let position = i.pointer.interact_pos().unwrap().clone();
-                                    match editing{
-                                        EditType::Free => {app.push_new_position(position)}
-                                        EditType::Square => {app.update_rect_position(position)}
-                                        EditType::Circle => {app.update_circle_position(position)}
-                                        EditType::Arrow => {app.update_arrow_position(position)}
-                                        EditType::Highlight =>{app.update_highlight_position(position)}
-                                        _ =>{}
+                                    if i.pointer.interact_pos().is_some(){
+                                        if i.pointer.hover_pos().unwrap().y>54.0{
+                                            let position = i.pointer.interact_pos().unwrap().clone();
+                                            match editing{
+                                                EditType::Free => {app.push_new_position(position)}
+                                                EditType::Square => {app.update_rect_position(position)}
+                                                EditType::Circle => {app.update_circle_position(position)}
+                                                EditType::Arrow => {app.update_arrow_position(position)}
+                                                EditType::Highlight =>{app.update_highlight_position(position)}
+                                                _ =>{}
+                                            }
+                                        }
                                     }
                                 }
                             }
@@ -144,12 +150,18 @@ pub(crate) mod input{
                             //ascolto la tastiera dagli eventi key
                             Key {key, pressed, repeat, modifiers}=>{
                                 if !*repeat && *pressed {
+                                    app.set_repeated_keys(false);
                                     //sto premendo i tasti della tastiera in un momento qualsiasi
-                                    if let Some(modifier) = find_modifier(modifiers){
-                                        modifier.iter().for_each(|modifier| app.set_pressed_key(modifier));
-                                    }
+                                    let pressed_keys = if let Some(modifier) = find_modifier(modifiers){
+                                        //modifier.iter().for_each(|modifier| app.set_pressed_key(modifier));
+                                        let mut modifier_keys = modifier.iter().map(|el| el.to_string()).collect::<Vec<_>>().clone();
+                                        modifier_keys.push(key.name().to_string());
+                                        modifier_keys
+                                    }else{
+                                        vec![key.name().to_string()]
+                                    };
                                     //set pressed key
-                                    app.set_pressed_key(key.name());
+                                    app.set_pressed_key(pressed_keys);
                                 } else if !*pressed && !app.get_request_state().equal("HotkeysSelection") {
                                     //potrei far partire una hotkey function
                                     if !app.get_hotkey_enable().is_empty() {

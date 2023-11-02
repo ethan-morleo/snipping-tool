@@ -73,7 +73,11 @@
             pub(crate)color: Color32,
             pub(crate)highlight_size: Option<SizeType>,
             screen_made: bool,
+<<<<<<< Updated upstream
             button_size: f32
+=======
+            full_screen_request: bool
+>>>>>>> Stashed changes
         }
 
         impl Default for MyApp{
@@ -111,7 +115,11 @@
                     edit_image: false,
                     color: Color32::BLUE,
                     screen_made: false,
+<<<<<<< Updated upstream
                     button_size: size.clone()
+=======
+                    full_screen_request: false
+>>>>>>> Stashed changes
                 }
             }
         }
@@ -152,7 +160,11 @@
             pub fn is_edit_image(&self) -> bool{self.edit_image.clone()}
             pub fn is_screen_made(&self) ->bool{self.screen_made.clone()}
             pub fn is_image_show(&self) -> bool{self.image_show.clone()}
+<<<<<<< Updated upstream
             pub fn get_size_button(&self) ->f32{self.button_size.clone()}
+=======
+            pub fn is_full_screen_request(&self)->bool{self.full_screen_request.clone()}
+>>>>>>> Stashed changes
             //--------------------------------------------------------------------------------------
             //SETTER
             pub fn set_request_state(&mut self, state: RequestState){
@@ -188,13 +200,14 @@
                 }
             }
             pub fn set_repeated_keys(&mut self, value: bool){self.repeated_keys = value}
-            pub fn set_pressed_key(&mut self, key: &str){self.press_keys.push(key.to_string())}
+            pub fn set_pressed_key(&mut self, keys: Vec<String>){self.press_keys = keys}
             pub fn set_rect_shown(&mut self, value: bool){self.rect_shown = value}
             pub fn set_rect_edit(&mut self, value: Option<RectEdit>){self.rect_edit = value}
             pub fn set_screen_selected(&mut self, value: usize){self.screen_selected = value}
             pub fn set_save_location(&mut self, location: String){self.saved_default.set_location(location)}
             pub fn set_setup(&mut self, value: bool){self.setup = value}
             pub fn set_first_processed(&mut self, value: bool){self.first_processed = value}
+            pub fn set_full_screen_request(&mut self, value: bool){self.full_screen_request = value}
             pub fn set_saved_default(&mut self, data: DefaultOption){self.saved_default = data}
             pub fn set_edit_image(&mut self, value: bool){self.edit_image = value}
 
@@ -390,6 +403,7 @@
                     match function {
                         HotkeysFunctions::NewFull => {
                             self.reinit_app();
+                            self.full_screen_request = true;
                             self.screen_request_init(frame);
                         }
                         HotkeysFunctions::NewCustom => {

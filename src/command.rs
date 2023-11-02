@@ -13,8 +13,8 @@ pub fn new_screen_command(app: &mut MyApp, frame: &mut eframe::Frame){
             app.screen_request_init(frame);
         }
     }
-pub fn go_back_command(app: &mut MyApp){
-    if app.is_rect_shown(){
+pub fn go_back_command(app: &mut MyApp, ctx: &egui::Context){
+    if app.is_rect_shown() && !app.get_request_state().equal("EditImage"){
         app.set_rect_shown(false);
         app.set_rect_position(1, Pos2::new(0.0,0.0));
         app.set_rect_position(2, Pos2::new(0.0,0.0));
@@ -23,7 +23,12 @@ pub fn go_back_command(app: &mut MyApp){
         app.erase_drawing();
         app.set_request_state(RequestState::Processed);
     }else if app.get_request_state().equal("HotkeyWindow"){
-        app.set_request_state(RequestState::Initialized);
+        ctx.set_pixels_per_point(1.0);
+        if app.image_raw.is_some() || app.is_rect_choosen() {
+            app.set_request_state(RequestState::Processed)
+        }else{
+            app.set_request_state(RequestState::Initialized)
+        }
     }else if app.get_request_state().equal("HotkeysSelection"){
         app.clear_press_keys();
         app.set_request_state(RequestState::HotkeyWindow);
@@ -94,12 +99,13 @@ pub fn delete_shortcut_command(app: &mut MyApp){
     app.remove_from_map_by_value(app.get_hotkey_selected());
     app.set_request_state(RequestState::HotkeyWindow);
 }
-pub fn ok_save_location_command(app: &mut MyApp){
+pub fn ok_save_location_command(app: &mut MyApp, ctx: &egui::Context){
     if app.image_raw.is_some() || app.is_rect_choosen() {
         app.set_request_state(RequestState::Processed)
     }else{
         app.set_request_state(RequestState::Initialized)
     }
+    ctx.set_pixels_per_point(1.0);
 }
 pub fn draw_image_command(app: &mut MyApp, frame: &mut eframe::Frame, ui: &mut Ui) {
     if app.is_screen_made() {

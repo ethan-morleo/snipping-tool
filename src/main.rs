@@ -1,9 +1,8 @@
 
 use eframe::{egui, HardwareAcceleration, Storage};
-use egui::{Align,CursorIcon, Layout, Pos2, Rect, UserAttentionType, Vec2};
+use egui::{Pos2, Rect};
 use egui_extras::RetainedImage;
 use image::{DynamicImage, RgbaImage};
-use itertools::Itertools;
 use crate::app::app_utils::MyApp;
 use crate::enums::app_enums::{RequestState, SavedData};
 use crate::graphic::graphics::{choice_monitor_page, choice_screen_page, editing_page, home_page, hotkeys_pages, processed_page, saving_option_page};
@@ -90,12 +89,12 @@ impl eframe::App for MyApp {
             //HOTKEY VIEW WINDOW
             if self.get_request_state().equal("HotkeyWindow") ||self.get_request_state().equal("HotkeysSelection") || self.get_request_state().equal("HotkeysAdd"){
                     //UI FOR HOTKEYS EDIT WINDOW
-                    hotkeys_pages(ui,self,frame,ctx);
+                    hotkeys_pages(ui,self,ctx);
             }
             //--------------------------------------------------------------------------------------
             //UI FOR SAVING PREFERENCES
             if self.get_request_state().equal("SavePreferences"){
-                saving_option_page(ui,self,frame,ctx);
+                saving_option_page(ui,self,ctx);
             }
         });
         //------------------------------------------------------------------------------------------

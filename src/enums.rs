@@ -1,6 +1,4 @@
 pub mod app_enums{
-    use egui::Modifiers;
-    use egui_extras::RetainedImage;
     use serde::{Deserialize, Serialize};
 
     ///enum for all request state
