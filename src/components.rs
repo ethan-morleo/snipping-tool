@@ -22,14 +22,14 @@ pub(crate) mod components {
     ///DRAW BACK BUTTON THAT CONTROL THE GO BACK FE FLOW
     pub fn back_button(app: &mut MyApp, ui: &mut Ui, ctx: &egui::Context){
         ui.add_space(20.0);
-        let size = if !app.get_request_state().equal("ChoiceScreen"){30.0}else{70.0};
+        let size = if !app.get_request_state().equal("ChoiceScreen"){app.get_size_button()}else{70.0};
         if ui.add(
             egui::ImageButton::new(
                 app.get_icon(4).texture_id(ctx),
                 Vec2::new(size,size)
             )
         ).on_hover_text("GO BACK").clicked(){
-            go_back_command(app);
+            go_back_command(app, ctx);
         }
     }
     ///MONITOR CHOICE BUTTON
@@ -49,7 +49,7 @@ pub(crate) mod components {
         ui.add_space(10.0);
         if ui.add(egui::ImageButton::new(
             app.get_icon(9).texture_id(ctx),
-            Vec2::new(30.0, 30.0)
+            Vec2::new(app.get_size_button(), app.get_size_button())
         )).on_hover_text("PAINT ON IMAGE").clicked(){
             app.set_request_state(RequestState::EditImage)
         }
@@ -59,7 +59,7 @@ pub(crate) mod components {
         ui.add_space(10.0);
         if ui.add(egui::ImageButton::new(
             app.get_icon(5).texture_id(ctx),
-            Vec2::new(30.0, 30.0)
+            Vec2::new(app.get_size_button(), app.get_size_button())
         )).on_hover_text("SAVE AS...").clicked(){
             save_image_command(app);
         }
@@ -69,7 +69,7 @@ pub(crate) mod components {
         ui.add_space(10.0);
         if ui.add(egui::ImageButton::new(
             app.get_icon(6).texture_id(ctx),
-            Vec2::new(30.0, 30.0)
+            Vec2::new(app.get_size_button(), app.get_size_button())
         )).on_hover_text("COPY").clicked(){
             app.copy_in_clipboard(clipboard);
         };
@@ -98,9 +98,10 @@ pub(crate) mod components {
     }
     ///SAVE FOLDER LOCATION
     pub fn save_folder_button(app: &mut MyApp, ui: &mut Ui){
+        ui.add_space(30.0);
         ui.horizontal(
             |ui|{
-                ui.label("choose default folder location");
+                ui.label("DEFAULT SAVING FOLDER: ");
                 if ui.button("choose folder").clicked(){
                     let location = FileDialog::new().show_open_single_dir().unwrap();
                     if let Some(path) = location{
@@ -117,9 +118,9 @@ pub(crate) mod components {
         }
     }
 
-    pub fn back_shortcut_button(app: &mut MyApp, ui: &mut Ui){
+    pub fn back_shortcut_button(app: &mut MyApp, ui: &mut Ui, ctx: &egui::Context){
         if ui.button("BACK").clicked(){
-            go_back_command(app);
+            go_back_command(app, ctx);
         }
     }
     ///DELETE SHORTCUT BUTTON
@@ -129,9 +130,9 @@ pub(crate) mod components {
         }
     }
     ///OK SAVE DEFAULT BUTTON
-    pub fn ok_default_save_button(app: &mut MyApp, ui: &mut Ui){
+    pub fn ok_default_save_button(app: &mut MyApp, ui: &mut Ui, ctx: &egui::Context){
         if ui.button("OK").clicked(){
-            ok_save_location_command(app);
+            ok_save_location_command(app, ctx);
         }
     }
     ///---------------------------------------------------------------------------------------------
@@ -169,7 +170,7 @@ pub(crate) mod components {
         };
         egui::ComboBox::new(
             "paint", "", )
-            .width(150.0)
+            .width(130.0)
             .selected_text(selected_edit)
             .show_ui(ui, |ui|{
                 for edit_type in [
@@ -221,7 +222,7 @@ pub(crate) mod components {
         }
         ui.add_space(20.0);
         egui::ComboBox::new("+", "")
-            .selected_text(format!("{:?}", app.get_hotkey_selected().to_string()))
+            .selected_text(app.get_hotkey_selected().to_string())
             .show_ui(ui, |ui|{
                 for function in all_selectable_functions {
                     ui.selectable_value(&mut app.hotkey_selected, function, format!("{:?}", function.to_string()));
@@ -326,7 +327,7 @@ pub(crate) mod components {
     pub fn more_menu(app: &mut MyApp, ui: &mut Ui, ctx: &egui::Context) {
         ui.menu_image_button(
             app.get_icon(7).texture_id(ctx),
-            Vec2::new(30.0,30.0),
+            Vec2::new(app.get_size_button(),app.get_size_button()),
             |ui| {
                 if ui.add(egui::Button::image_and_text(
                     app.get_icon(8).texture_id(ctx),
@@ -347,7 +348,7 @@ pub(crate) mod components {
     pub fn draw_text_edit(app: &mut MyApp, ui: &mut Ui){
         ui.horizontal(
             |ui|{
-                ui.label("default saving name: ");
+                ui.label("DEFAULT SAVING NAME: ");
                 ui.add(egui::TextEdit::singleline(&mut app.saved_default.save_name).hint_text("write the default name"))
             }
         );
@@ -378,7 +379,7 @@ pub(crate) mod components {
     let keys = keys_string(app.get_press_keys());
 
         ui.vertical_centered(|ui| {
-            ui.label(format!("PREMI I TASTI PER LA SHORTCUT: {function}", function = app.get_hotkey_selected().to_string()));
+            ui.label(format!("PREMI I TASTI PER LA SHORTCUT: {function} (NO ctrl+c; cmd+c)", function = app.get_hotkey_selected().to_string()));
         });
         ui.separator();
         ui.add_space(20.0);

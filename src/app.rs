@@ -73,11 +73,9 @@
             pub(crate)color: Color32,
             pub(crate)highlight_size: Option<SizeType>,
             screen_made: bool,
-<<<<<<< Updated upstream
-            button_size: f32
-=======
+            button_size: f32,
+            font_size: f32,
             full_screen_request: bool
->>>>>>> Stashed changes
         }
 
         impl Default for MyApp{
@@ -115,11 +113,9 @@
                     edit_image: false,
                     color: Color32::BLUE,
                     screen_made: false,
-<<<<<<< Updated upstream
-                    button_size: size.clone()
-=======
+                    button_size: SIZE.clone(),
+                    font_size: FONT_SIZE.clone(),
                     full_screen_request: false
->>>>>>> Stashed changes
                 }
             }
         }
@@ -160,11 +156,9 @@
             pub fn is_edit_image(&self) -> bool{self.edit_image.clone()}
             pub fn is_screen_made(&self) ->bool{self.screen_made.clone()}
             pub fn is_image_show(&self) -> bool{self.image_show.clone()}
-<<<<<<< Updated upstream
             pub fn get_size_button(&self) ->f32{self.button_size.clone()}
-=======
+            pub fn get_font_size(&self) -> f32{self.font_size.clone()}
             pub fn is_full_screen_request(&self)->bool{self.full_screen_request.clone()}
->>>>>>> Stashed changes
             //--------------------------------------------------------------------------------------
             //SETTER
             pub fn set_request_state(&mut self, state: RequestState){
@@ -497,9 +491,11 @@
         }
         cfg_if!{
             if #[cfg(target_os = "macos")]{
-                static size: f32 = 60.0;
+                static SIZE: f32 = 60.0;
+                static FONT_SIZE : f32 = 28.0;
             }else{
-                static size: f32 = 30.0;
+                static SIZE: f32 = 30.0;
+                static FONT_SIZE: f32 = 16.0;
             }
         }
     }

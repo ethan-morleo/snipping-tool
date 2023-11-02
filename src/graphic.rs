@@ -138,7 +138,7 @@ pub fn hotkeys_pages(ui: &mut Ui, app: &mut MyApp, ctx: &egui::Context){
                             }
 
                         }
-                        back_shortcut_button(app, ui);
+                        back_shortcut_button(app, ui, ctx);
                     });
                 ui.separator();
                 ui.label("SCEGLI TRA LE FUNZIONI E SETTA LE SHORTCUTS");
@@ -163,7 +163,7 @@ pub fn hotkeys_pages(ui: &mut Ui, app: &mut MyApp, ctx: &egui::Context){
         ui.separator();
         ui.horizontal(
             |ui|{
-                back_button(app, ui, ctx);
+                back_shortcut_button(app, ui, ctx);
                 if app.get_hotkey_enable().values().contains(&app.get_hotkey_selected().to_string().to_string()){
                     ui.separator();
                     delete_shortcut_button(app, ui);
@@ -199,7 +199,7 @@ pub fn saving_option_page(ui: &mut Ui, app: &mut MyApp, ctx: &egui::Context){
     ui.add_space(30.0);
     draw_text_edit(app, ui);
     ui.add_space(50.0);
-    ok_default_save_button(app, ui);
+    ok_default_save_button(app, ui, ctx);
 }
 
 }

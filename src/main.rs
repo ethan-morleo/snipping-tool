@@ -40,12 +40,6 @@ fn  main() -> Result<(), eframe::Error> {
 impl eframe::App for MyApp {
 
     fn update(&mut self, ctx: &egui::Context, frame: &mut eframe::Frame) {
-        if self.get_request_state().equal("HotkeyWindow") ||self.get_request_state().equal("HotkeysSelection") || self.get_request_state().equal("HotkeysAdd") ||
-            self.get_request_state().equal("SavePreferences"){
-            ctx.set_pixels_per_point(1.5);
-        }else{
-            ctx.set_pixels_per_point(1.0);
-        }
 
         let clipboard = &mut arboard::Clipboard::new().unwrap();
 
@@ -53,12 +47,12 @@ impl eframe::App for MyApp {
         if !self.is_setup(){
             self.setup();
             self.set_setup(true);
+            ctx.set_pixels_per_point(1.0);
+            custom_fonts(self,ctx);
         }
-
         //UI
         egui::CentralPanel::default().show(ctx, |ui| {
             control_keyboard(self,ctx, frame, clipboard);
-            custom_fonts(ctx);
             //--------------------------------------------------------------------------------------
             //UI FOR THE APP IN INITIALIZED
             if self.get_request_state().equal("INITIALIZED"){
@@ -89,7 +83,7 @@ impl eframe::App for MyApp {
             //HOTKEY VIEW WINDOW
             if self.get_request_state().equal("HotkeyWindow") ||self.get_request_state().equal("HotkeysSelection") || self.get_request_state().equal("HotkeysAdd"){
                     //UI FOR HOTKEYS EDIT WINDOW
-                    hotkeys_pages(ui,self,ctx);
+                hotkeys_pages(ui,self,ctx);
             }
             //--------------------------------------------------------------------------------------
             //UI FOR SAVING PREFERENCES
@@ -120,10 +114,11 @@ impl eframe::App for MyApp {
 
     fn post_rendering(&mut self, _window_size_px: [u32; 2], _frame: &eframe::Frame) {
         if let Some(screenshot) = _frame.screenshot(){
+            let y_to_decrease = self.get_size_button() + 24.0;
             self.erase_drawing();
             let mut window_size = _frame.info().window_info.size;
-            window_size.y = window_size.y.clone() -54.0;
-            let region = Rect::from_min_size(Pos2::new(0.0,54.0), window_size);
+            window_size.y = window_size.y.clone() - y_to_decrease;
+            let region = Rect::from_min_size(Pos2::new(0.0,y_to_decrease), window_size);
             let real_screenshot = screenshot.region(&region, Some(1.0));
             let image = RetainedImage::from_color_image(
                 "edit_image",

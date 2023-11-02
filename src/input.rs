@@ -27,7 +27,7 @@ pub(crate) mod input{
                                             EditType::Arrow => {app.set_new_arrow_position([position, position])}
                                             EditType::Highlight =>{app.set_new_highlight_position([position, position])}
                                             _ =>{}
-                                        }  
+                                        }
                                     }
                                 }
                             }
@@ -138,55 +138,57 @@ pub(crate) mod input{
         ctx.input(
             |i|{
                 //COPY TO THE CLIPBOARD IF TERMINAL STATE AND PRESS 'COPY PATTERN'
-                if i.events.contains(&egui::Event::Copy) && app.get_request_state().equal("PROCESSED"){
-                    //copy image in clipboard
-                    app.copy_in_clipboard(clipboard);
-                }
-
-                //LISTEN HOTKEYS SHORTCUTS
-                i.events.iter().for_each(
-                    |event|{
-                        match event {
-                            //ascolto la tastiera dagli eventi key
-                            Key {key, pressed, repeat, modifiers}=>{
-                                if !*repeat && *pressed {
-                                    app.set_repeated_keys(false);
-                                    //sto premendo i tasti della tastiera in un momento qualsiasi
-                                    let pressed_keys = if let Some(modifier) = find_modifier(modifiers){
-                                        //modifier.iter().for_each(|modifier| app.set_pressed_key(modifier));
-                                        let mut modifier_keys = modifier.iter().map(|el| el.to_string()).collect::<Vec<_>>().clone();
-                                        modifier_keys.push(key.name().to_string());
-                                        modifier_keys
-                                    }else{
-                                        vec![key.name().to_string()]
-                                    };
-                                    //set pressed key
-                                    app.set_pressed_key(pressed_keys);
-                                } else if !*pressed && !app.get_request_state().equal("HotkeysSelection") {
-                                    //potrei far partire una hotkey function
-                                    if !app.get_hotkey_enable().is_empty() {
-                                        for (k, v) in app.get_hotkey_enable() {
-                                           if compare_keys(app.get_press_keys(), k.clone()){
-                                               app.do_hotkey_function(HotkeysFunctions::into_enum(v.as_str()), frame);
-                                           }
+                if i.events.contains(&egui::Event::Copy){
+                    if app.get_request_state().equal("PROCESSED"){
+                        //copy image in clipboard
+                        app.copy_in_clipboard(clipboard); 
+                    }
+                }else{
+                    //LISTEN HOTKEYS SHORTCUTS
+                    i.events.iter().for_each(
+                        |event|{
+                            match event {
+                                //listening "key events" 
+                                Key {key, pressed, repeat, modifiers}=>{
+                                    if !*repeat && *pressed {
+                                        //pressing new combination from random part of the app 
+                                        app.set_repeated_keys(false);
+                                        let pressed_keys = if let Some(modifier) = find_modifier(modifiers){
+                                            //modifier.iter().for_each(|modifier| app.set_pressed_key(modifier));
+                                            let mut modifier_keys = modifier.iter().map(|el| el.to_string()).collect::<Vec<_>>().clone();
+                                            modifier_keys.push(key.name().to_string());
+                                            modifier_keys
+                                        }else{
+                                            vec![key.name().to_string()]
+                                        };
+                                        //set pressed key
+                                        app.set_pressed_key(pressed_keys);
+                                    } else if !*pressed && !app.get_request_state().equal("HotkeysSelection") {
+                                        //if i press a combination and i'm not in hotkeysSelection it could start a hotkey function 
+                                        if !app.get_hotkey_enable().is_empty() {
+                                            for (k, v) in app.get_hotkey_enable() {
+                                                if compare_keys(app.get_press_keys(), k.clone()){
+                                                    app.do_hotkey_function(HotkeysFunctions::into_enum(v.as_str()), frame);
+                                                }
+                                            }
                                         }
-                                    }
-                                    app.clear_press_keys();
-                                }else if !*pressed && app.get_request_state().equal("HotkeysSelection"){
-                                    //sto settando le hotkeys
-                                    if !app.get_hotkey_enable().is_empty(){
-                                        for k in app.get_hotkey_enable().keys(){
-                                            if compare_keys(app.get_press_keys(), k.clone()){
-                                                app.set_repeated_keys(true);
+                                        app.clear_press_keys();
+                                    }else if !*pressed && app.get_request_state().equal("HotkeysSelection"){
+                                        //setting particular hotkeys
+                                        if !app.get_hotkey_enable().is_empty(){
+                                            for k in app.get_hotkey_enable().keys(){
+                                                if compare_keys(app.get_press_keys(), k.clone()){
+                                                    app.set_repeated_keys(true);
+                                                }
                                             }
                                         }
                                     }
                                 }
+                                _ => {}
                             }
-                            _ => {}
                         }
-                    }
                 )
+                }
             }
         )
     }
