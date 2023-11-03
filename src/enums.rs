@@ -113,7 +113,7 @@ pub mod app_enums{
     impl DefaultOption {
         pub fn get_location(&self) ->Option<String>{self.save_location.clone()}
         pub fn get_name(&self) ->String{self.save_name.clone()}
-        pub fn get_screenshot_numbers(&self) ->usize{self.screenshot_numbers}
+        pub fn get_screenshot_numbers(&self) ->usize{self.screenshot_numbers.clone()}
         pub fn set_location(&mut self, location: String){self.save_location = Some(location)}
         pub fn set_screenshot_number(&mut self, value: usize){self.screenshot_numbers = value}
     }

@@ -92,30 +92,30 @@ pub mod utils{
     pub fn change_rect(app : &mut MyApp, case: i32, position_to_update: f32){
         match case {
             1 =>{
-                if app.get_rect_position()[0].x as i32 == min(app.get_rect_position()[0].x as i32, app.get_rect_position()[1].x as i32){
-                    app.set_rect_position(1, Pos2::new(position_to_update, app.get_rect_position()[0].y))
+                if app.get_rect_position()[0].clone().x as i32 == min(app.get_rect_position()[0].clone().x as i32, app.get_rect_position()[1].clone().x as i32){
+                    app.set_rect_position(1, Pos2::new(position_to_update, app.get_rect_position()[0].clone().y))
                 }else{
-                    app.set_rect_position(2, Pos2::new(position_to_update, app.get_rect_position()[1].y))
+                    app.set_rect_position(2, Pos2::new(position_to_update, app.get_rect_position()[1].clone().y))
                 }
             }
             2 =>{
-                if app.get_rect_position()[0].x as i32 == max(app.get_rect_position()[0].x as i32, app.get_rect_position()[1].x as i32){
-                app.set_rect_position(1, Pos2::new(position_to_update, app.get_rect_position()[0].y))
+                if app.get_rect_position()[0].clone().x as i32 == max(app.get_rect_position()[0].clone().x as i32, app.get_rect_position()[1].clone().x as i32){
+                app.set_rect_position(1, Pos2::new(position_to_update, app.get_rect_position()[0].clone().y))
             }else{
-                app.set_rect_position(2, Pos2::new(position_to_update, app.get_rect_position()[1].y))
+                app.set_rect_position(2, Pos2::new(position_to_update, app.get_rect_position()[1].clone().y))
             }}
             3 => {
-                if app.get_rect_position()[0].y as i32 == max(app.get_rect_position()[0].y as i32, app.get_rect_position()[1].y as i32) {
-                    app.set_rect_position(1, Pos2::new(app.get_rect_position()[0].x, position_to_update))
+                if app.get_rect_position()[0].clone().y as i32 == max(app.get_rect_position()[0].clone().y as i32, app.get_rect_position()[1].clone().y as i32) {
+                    app.set_rect_position(1, Pos2::new(app.get_rect_position()[0].clone().x, position_to_update))
                 } else {
-                    app.set_rect_position(2, Pos2::new(app.get_rect_position()[1].x, position_to_update))
+                    app.set_rect_position(2, Pos2::new(app.get_rect_position()[1].clone().x, position_to_update))
                 }
             }
             4 =>{
-                if app.get_rect_position()[0].y as i32 == min(app.get_rect_position()[0].y as i32, app.get_rect_position()[1].y as i32){
-                    app.set_rect_position(1, Pos2::new(app.get_rect_position()[0].x, position_to_update))
+                if app.get_rect_position()[0].clone().y as i32 == min(app.get_rect_position()[0].clone().y as i32, app.get_rect_position()[1].clone().y as i32){
+                    app.set_rect_position(1, Pos2::new(app.get_rect_position()[0].clone().x, position_to_update))
                 }else{
-                    app.set_rect_position(2, Pos2::new(app.get_rect_position()[1].x, position_to_update))
+                    app.set_rect_position(2, Pos2::new(app.get_rect_position()[1].clone().x, position_to_update))
                 }
             }
             _ => {}

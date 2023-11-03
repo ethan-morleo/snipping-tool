@@ -74,10 +74,10 @@ pub(crate) mod input{
                         }
                     }else{
                         //dragging feature
-                        let min_x = min(app.get_rect_position()[0].x as i32, app.get_rect_position()[1].x as i32);
-                        let min_y = min(app.get_rect_position()[0].y as i32, app.get_rect_position()[1].y as i32);
-                        let max_x = max(app.get_rect_position()[0].x as i32, app.get_rect_position()[1].x as i32);
-                        let max_y = max(app.get_rect_position()[0].y as i32, app.get_rect_position()[1].y as i32);
+                        let min_x = min(app.get_rect_position()[0].clone().x as i32, app.get_rect_position()[1].clone().x as i32);
+                        let min_y = min(app.get_rect_position()[0].clone().y as i32, app.get_rect_position()[1].clone().y as i32);
+                        let max_x = max(app.get_rect_position()[0].clone().x as i32, app.get_rect_position()[1].clone().x as i32);
+                        let max_y = max(app.get_rect_position()[0].clone().y as i32, app.get_rect_position()[1].clone().y as i32);
                         let mut mouse_pos: Pos2 = Pos2::default();
                         if i.pointer.hover_pos().is_some(){mouse_pos = i.pointer.hover_pos().unwrap()}
                         if i.pointer.primary_down(){
@@ -107,17 +107,17 @@ pub(crate) mod input{
                             }
                         }else{
                             //horizontal left
-                            if (mouse_pos.x > min_x as f32 -30.0 && mouse_pos.x < min_x as f32 +30.0) && (mouse_pos.y>min_y as f32 && mouse_pos.y<max_y as f32){
+                            if (mouse_pos.x > min_x as f32 -30.0 && mouse_pos.x < min_x.clone() as f32 +30.0) && (mouse_pos.y>min_y as f32 && mouse_pos.y<max_y as f32){
                                 app.set_rect_edit(Some(RectEdit::HorizontalLeft));
                             }
-                            else if (mouse_pos.x > max_x as f32-30.0 && mouse_pos.x <max_x as f32+30.0) && (mouse_pos.y>min_y as f32 && mouse_pos.y<max_y as f32) {
+                            else if (mouse_pos.x > max_x as f32-30.0 && mouse_pos.x <max_x.clone() as f32+30.0) && (mouse_pos.y>min_y.clone() as f32 && mouse_pos.y<max_y.clone() as f32) {
                                 app.set_rect_edit(Some(RectEdit::HorizontalRight));
                             }
                             //vertical top
-                            else if (mouse_pos.y > min_y as f32 -30.0 && mouse_pos.y < min_y as f32 +30.0) && (mouse_pos.x>min_x as f32 && mouse_pos.x<max_x as f32){
+                            else if (mouse_pos.y > min_y.clone() as f32 -30.0 && mouse_pos.y < min_y.clone() as f32 +30.0) && (mouse_pos.x>min_x.clone() as f32 && mouse_pos.x<max_x.clone() as f32){
                                 app.set_rect_edit(Some(RectEdit::VerticalTop));
                             }
-                            else if (mouse_pos.y > max_y as f32 -30.0 as f32 && mouse_pos.y < max_y as f32 +30.0) && (mouse_pos.x>min_x as f32 && mouse_pos.x<max_x as f32){
+                            else if (mouse_pos.y > max_y.clone() as f32 -30.0 as f32 && mouse_pos.y < max_y.clone() as f32 +30.0) && (mouse_pos.x>min_x.clone() as f32 && mouse_pos.x<max_x.clone() as f32){
                                 app.set_rect_edit(Some(RectEdit::VerticalDown));
                             }
                             // other positions
@@ -150,7 +150,7 @@ pub(crate) mod input{
                             match event {
                                 //listening "key events" 
                                 Key {key, pressed, repeat, modifiers}=>{
-                                    if !*repeat && *pressed {
+                                    if !repeat.clone() && pressed.clone() {
                                         //pressing new combination from random part of the app 
                                         app.set_repeated_keys(false);
                                         let pressed_keys = if let Some(modifier) = find_modifier(modifiers){
@@ -163,7 +163,7 @@ pub(crate) mod input{
                                         };
                                         //set pressed key
                                         app.set_pressed_key(pressed_keys);
-                                    } else if !*pressed && !app.get_request_state().equal("HotkeysSelection") {
+                                    } else if !pressed.clone() && !app.get_request_state().equal("HotkeysSelection") {
                                         //if i press a combination and i'm not in hotkeysSelection it could start a hotkey function 
                                         if !app.get_hotkey_enable().is_empty() {
                                             for (k, v) in app.get_hotkey_enable() {
@@ -173,7 +173,7 @@ pub(crate) mod input{
                                             }
                                         }
                                         app.clear_press_keys();
-                                    }else if !*pressed && app.get_request_state().equal("HotkeysSelection"){
+                                    }else if !pressed.clone() && app.get_request_state().equal("HotkeysSelection"){
                                         //setting particular hotkeys
                                         if !app.get_hotkey_enable().is_empty(){
                                             for k in app.get_hotkey_enable().keys(){
