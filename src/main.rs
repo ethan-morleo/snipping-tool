@@ -46,6 +46,7 @@ impl eframe::App for MyApp {
         //setup the app in the first update in case of restore of user preferences
         if !self.is_setup(){
             self.setup();
+            frame.set_fullscreen(false);
             self.set_setup(true);
             ctx.set_pixels_per_point(1.0);
             custom_fonts(self,ctx);

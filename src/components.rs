@@ -26,7 +26,7 @@ pub(crate) mod components {
         if ui.add(
             egui::ImageButton::new(
                 app.get_icon(4).texture_id(ctx),
-                Vec2::new(size,size)
+                Vec2::new(size,size.clone())
             )
         ).on_hover_text("GO BACK").clicked(){
             go_back_command(app, ctx);
@@ -52,6 +52,15 @@ pub(crate) mod components {
             Vec2::new(app.get_size_button(), app.get_size_button())
         )).on_hover_text("PAINT ON IMAGE").clicked(){
             app.set_request_state(RequestState::EditImage)
+        }
+    }
+    ///ERASE PAINTING BUTTON
+    pub fn erase_button(app: &mut MyApp, ui: &mut Ui, ctx: &egui::Context){
+        if ui.add(egui::ImageButton::new(
+            app.get_icon(2).texture_id(ctx),
+            Vec2::new(app.get_size_button(), app.get_size_button())
+        )).on_hover_text("ERASE PAINTING").clicked(){
+            app.erase_drawing();
         }
     }
     ///DRAW SAVE FILE PICKER BUTTON
@@ -170,7 +179,7 @@ pub(crate) mod components {
         };
         egui::ComboBox::new(
             "paint", "", )
-            .width(130.0)
+            .width(200.0)
             .selected_text(selected_edit)
             .show_ui(ui, |ui|{
                 for edit_type in [
@@ -197,7 +206,7 @@ pub(crate) mod components {
                         } });
             }else{
                 egui::ComboBox::new("color", "")
-                    .width(100.0)
+                    .width(150.0)
                     .selected_text(get_str_from_color(app.color))
                     .show_ui(ui, |ui|{
                         for color in [
@@ -246,7 +255,7 @@ pub(crate) mod components {
     ///ARROW PAINTING EDIT
     pub fn draw_arrow(app: &mut MyApp, ui: &mut Ui){
         for arrow_points in app.get_arrow_paint_position(){
-            let vec2 = Vec2::new((arrow_points[1].x - arrow_points[0].x) as f32, (arrow_points[1].y - arrow_points[0].y) as f32);
+            let vec2 = Vec2::new((arrow_points[1].clone().x - arrow_points[0].clone().x) as f32, (arrow_points[1].clone().y - arrow_points[0].clone().y) as f32);
             ui.painter().arrow(
                 arrow_points[0],
                 vec2,
@@ -257,7 +266,7 @@ pub(crate) mod components {
     ///CIRCLE PAINTING EDIT
     pub fn draw_cirlce(app: &mut MyApp, ui: &mut Ui){
         for circle_points in app.get_circle_paint_position(){
-            let radius = f32::sqrt(((circle_points[0].x - circle_points[1].x).powi(2)) + (circle_points[0].y - circle_points[1].y).powi(2));
+            let radius = f32::sqrt(((circle_points[0].clone().x - circle_points[1].clone().x).powi(2)) + (circle_points[0].clone().y - circle_points[1].clone().y).powi(2));
             ui.painter().circle_stroke(
                 circle_points[0],
                         radius,
@@ -265,19 +274,19 @@ pub(crate) mod components {
             );
         }
     }
-    ///HIGHLITER
+    ///HIGHLIGHTER
     pub fn draw_highlighter(app : &mut MyApp, ui: &mut Ui){
         let size = match app.get_highlight_size().unwrap() {
             SizeType::Small => {12.0}
             SizeType::Medium => {20.0}
             SizeType::Large => {35.0}
         };
-        for highilight_points in app.get_highlight_paint_position(){
-            let final_coords = highilight_points[0].y +size;
-            let mut final_point = highilight_points[1];
+        for highlight_points in app.get_highlight_paint_position(){
+            let final_coords = highlight_points[0].clone().y +size.clone();
+            let mut final_point = highlight_points[1];
             final_point.y = final_coords;
             ui.painter().rect_filled(
-                Rect::from_two_pos(highilight_points[0], final_point),
+                Rect::from_two_pos(highlight_points[0], final_point),
                 Rounding::none(),
                 Color32::from_rgba_unmultiplied(255, 255, 0, 8u8)
             )
