@@ -33,8 +33,10 @@ pub fn home_page(ui: &mut Ui, app: &mut MyApp, frame: &mut eframe::Frame, ctx: &
 
 //CHOICE MONITOR PAGE
 pub fn choice_monitor_page(ui: &mut Ui, app: &mut MyApp, frame: &mut eframe::Frame, ctx: &egui::Context ){
+        ui.label("SCEGLI IL MONITOR DA ACQUISIRE");
+        ui.separator();
+        ui.add_space(30.0);
         for i in 1..app.get_display_number()+1{
-            ui.add_space(30.0);
             ui.horizontal_centered(|ui|{
                 monitor_button(app, ui, ctx, i, frame);
             });

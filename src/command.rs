@@ -67,7 +67,7 @@ pub fn save_image_command(app: &mut MyApp){
         .add_filter("WebP image", &["webp"])
         .add_filter("Tiff image", &["tiff"])
         .set_filename(default_name.as_str())
-        .set_location(Path::new(location.as_str().clone()))
+        .set_location(Path::new(location.as_str()))
         .show_save_single_file().unwrap();
     //save image
     if let Some(path) = path {
