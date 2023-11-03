@@ -26,8 +26,8 @@ cargo run
 
 * [eframe](https://github.com/emilk/egui/tree/master/crates/eframe) - the GUI framework based on egui
 * [egui](https://github.com/emilk/egui) - pure Rust GUI library 
-* [image]() - used for managing images 
-* [screenshots]() - library for taking screenshots 
+* [image](https://github.com/image-rs/image) - used for managing images 
+* [screenshots](https://github.com/nashaofu/screenshots-rs) - library for taking screenshots 
 
 ## SCREEN OF THE APP 
 
@@ -47,10 +47,4 @@ cargo run
 ## License
 
 This project is licensed under the MIT License 
-
-## Acknowledgments
-
-* Hat tip to anyone whose code was used
-* Inspiration
-* etc
 
