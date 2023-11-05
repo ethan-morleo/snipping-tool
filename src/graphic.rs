@@ -152,7 +152,7 @@ pub fn hotkeys_pages(ui: &mut Ui, app: &mut MyApp, ctx: &egui::Context){
         ui.add_space(30.0);
         if !app.get_press_keys().is_empty() {
             if app.is_repeated_keys(){
-                ui.label("ALREADY EXISTING HOTKEYS, IF PRESS OK WOULD BE OVERWRITING");
+                ui.label("HOTKEY GIA' PRESENTE, SE PREMI OK LA SOVRASCRIVERAI");
             }
             ui.horizontal(
                 |ui| {
